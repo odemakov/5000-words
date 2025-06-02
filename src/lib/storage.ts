@@ -5,186 +5,216 @@ const user_progress = prefix + 'user_progress';
 const user_level = prefix + 'user_level';
 
 export interface WordData {
-	id: number;
-	word: string;
-	props: string[];
-	translations: string[];
+  id: number;
+  word: string;
+  props: string[];
+  translations: string[];
 }
 
 export interface VersionInfo {
-	words_version: string;
-	last_updated: string;
-	total_words: number;
-	changelog?: string;
+  words_version: string;
+  last_updated: string;
+  total_words: number;
+  changelog?: string;
 }
 
 export interface UserProgress {
-	knownWords: number[];
-	learnedWords: number[];
-	currentWordIndex: number;
-	sessions: Array<{
-		date: string;
-		wordsLearned: number;
-		timeSpent: number;
-	}>;
+  knownWords: number[];
+  learnedWords: number[];
+  currentWordIndex: number;
+  sessions: Array<{
+    date: string;
+    wordsLearned: number;
+    timeSpent: number;
+  }>;
 }
 
 export interface UserLevel {
-	detectedLevel: number;
-	landingResults: Array<{
-		wordRange: string;
-		wordsTested: number[];
-		correctAnswers: number;
-		accuracy: number;
-	}>;
-	timestamp: string;
+  detectedLevel: number;
+  landingResults: Array<{
+    wordRange: string;
+    wordsTested: number[];
+    correctAnswers: number;
+    accuracy: number;
+  }>;
+  timestamp: string;
 }
 
 export class Storage {
-	static save<T>(key: string, data: T): boolean {
-		try {
-			localStorage.setItem(key, JSON.stringify(data));
-			return true;
-		} catch (error) {
-			console.error('Storage save failed:', error);
-			return false;
-		}
-	}
+  static save<T>(key: string, data: T): boolean {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      console.error('Storage save failed:', error);
+      return false;
+    }
+  }
 
-	static load<T>(key: string): T | null {
-		try {
-			const data = localStorage.getItem(key);
-			return data ? JSON.parse(data) : null;
-		} catch (error) {
-			console.error('Storage load failed:', error);
-			return null;
-		}
-	}
+  static load<T>(key: string): T | null {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('Storage load failed:', error);
+      return null;
+    }
+  }
 
-	static remove(key: string): boolean {
-		try {
-			localStorage.removeItem(key);
-			return true;
-		} catch (error) {
-			console.error('Storage remove failed:', error);
-			return false;
-		}
-	}
+  static remove(key: string): boolean {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (error) {
+      console.error('Storage remove failed:', error);
+      return false;
+    }
+  }
 
-	// App-specific methods
-	static getWords(): WordData[] | null {
-		return this.load<WordData[]>(words_data);
-	}
+  // App-specific methods
+  static getWords(): WordData[] | null {
+    return this.load<WordData[]>(words_data);
+  }
 
-	static saveWords(words: WordData[]): boolean {
-		return this.save(words_data, words);
-	}
+  static saveWords(words: WordData[]): boolean {
+    return this.save(words_data, words);
+  }
 
-	static getVersion(): VersionInfo | null {
-		return this.load<VersionInfo>(words_version);
-	}
+  static getVersion(): VersionInfo | null {
+    return this.load<VersionInfo>(words_version);
+  }
 
-	static saveVersion(version: VersionInfo): boolean {
-		return this.save(words_version, version);
-	}
+  static saveVersion(version: VersionInfo): boolean {
+    return this.save(words_version, version);
+  }
 
-	static getUserLevel(): UserLevel | null {
-		return this.load<UserLevel>(user_level);
-	}
+  static getUserLevel(): UserLevel | null {
+    return this.load<UserLevel>(user_level);
+  }
 
-	static saveUserLevel(level: UserLevel): boolean {
-		return this.save(user_level, level);
-	}
+  static saveUserLevel(level: UserLevel): boolean {
+    return this.save(user_level, level);
+  }
 
-	static getUserProgress(): UserProgress {
-		return (
-			this.load<UserProgress>(user_progress) || {
-				knownWords: [],
-				learnedWords: [],
-				currentWordIndex: 0,
-				sessions: []
-			}
-		);
-	}
+  static setUserLevel(levelName: string): boolean {
+    const currentLevel = this.getUserLevel() || {
+      detectedLevel: 0,
+      landingResults: [],
+      timestamp: new Date().toISOString()
+    };
 
-	static saveUserProgress(progress: UserProgress): boolean {
-		return this.save(user_progress, progress);
-	}
+    // Map level name to numerical value
+    let detectedLevel = 0;
+    switch (levelName) {
+      case 'A1':
+        detectedLevel = 1;
+        break;
+      case 'A2':
+        detectedLevel = 2;
+        break;
+      case 'B1':
+        detectedLevel = 3;
+        break;
+      case 'B2':
+        detectedLevel = 4;
+        break;
+    }
 
-	static async fetchVersionInfo(): Promise<VersionInfo> {
-		console.log('Fetching version info from network...');
-		const response = await fetch('/words-version.json', {
-			cache: 'no-cache',
-			headers: { 'Cache-Control': 'no-cache' }
-		});
+    currentLevel.detectedLevel = detectedLevel;
+    currentLevel.timestamp = new Date().toISOString();
 
-		if (!response.ok) {
-			throw new Error(`HTTP ${response.status}`);
-		}
+    return this.saveUserLevel(currentLevel);
+  }
 
-		return (await response.json()) as VersionInfo;
-	}
+  static getUserProgress(): UserProgress {
+    return (
+      this.load<UserProgress>(user_progress) || {
+        knownWords: [],
+        learnedWords: [],
+        currentWordIndex: 0,
+        sessions: []
+      }
+    );
+  }
 
-	static async checkForWordsUpdate(): Promise<{
-		needsUpdate: boolean;
-		version: VersionInfo | null;
-	}> {
-		try {
-			const newVersion = await this.fetchVersionInfo();
-			const cachedVersion = this.getVersion();
+  static saveUserProgress(progress: UserProgress): boolean {
+    return this.save(user_progress, progress);
+  }
 
-			// Compare versions
-			if (!cachedVersion || cachedVersion.words_version !== newVersion.words_version) {
-				console.log(
-					`Version update available: ${cachedVersion?.words_version || 'none'} -> ${newVersion.words_version}`
-				);
-				return { needsUpdate: true, version: newVersion };
-			}
+  static async fetchVersionInfo(): Promise<VersionInfo> {
+    console.log('Fetching version info from network...');
+    const response = await fetch('/words-version.json', {
+      cache: 'no-cache',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
 
-			return { needsUpdate: false, version: cachedVersion };
-		} catch (error) {
-			console.error('Failed to check version:', error);
-			// If version check fails, assume update needed if we have no cached words
-			return { needsUpdate: !this.getWords(), version: null };
-		}
-	}
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
 
-	static async downloadWords(
-		versionInfo?: VersionInfo | null
-	): Promise<{ words: WordData[]; version: VersionInfo }> {
-		try {
-			// If version info wasn't provided, use what we have
-			let version = versionInfo;
+    return (await response.json()) as VersionInfo;
+  }
 
-			if (!version) {
-				// Try to get cached version info
-				version = this.getVersion();
-			}
+  static async checkForWordsUpdate(): Promise<{
+    needsUpdate: boolean;
+    version: VersionInfo | null;
+  }> {
+    try {
+      const newVersion = await this.fetchVersionInfo();
+      const cachedVersion = this.getVersion();
 
-			// If we still don't have version info, fetch it
-			if (!version) {
-				console.log('Downloading version info...');
-				version = await this.fetchVersionInfo();
-			}
+      // Compare versions
+      if (!cachedVersion || cachedVersion.words_version !== newVersion.words_version) {
+        console.log(
+          `Version update available: ${cachedVersion?.words_version || 'none'} -> ${newVersion.words_version}`
+        );
+        return { needsUpdate: true, version: newVersion };
+      }
 
-			// Download words
-			console.log(`Downloading words (version: ${version.words_version})...`);
-			const wordsResponse = await fetch('/words.json', { cache: 'no-cache' });
+      return { needsUpdate: false, version: cachedVersion };
+    } catch (error) {
+      console.error('Failed to check version:', error);
+      // If version check fails, assume update needed if we have no cached words
+      return { needsUpdate: !this.getWords(), version: null };
+    }
+  }
 
-			if (!wordsResponse.ok) {
-				throw new Error('Failed to download words file');
-			}
+  static async downloadWords(
+    versionInfo?: VersionInfo | null
+  ): Promise<{ words: WordData[]; version: VersionInfo }> {
+    try {
+      // If version info wasn't provided, use what we have
+      let version = versionInfo;
 
-			const wordsData = await wordsResponse.json();
+      if (!version) {
+        // Try to get cached version info
+        version = this.getVersion();
+      }
 
-			if (!wordsData.words || !Array.isArray(wordsData.words)) {
-				throw new Error('Invalid words data structure');
-			}
+      // If we still don't have version info, fetch it
+      if (!version) {
+        console.log('Downloading version info...');
+        version = await this.fetchVersionInfo();
+      }
 
-			return { words: wordsData.words, version };
-		} catch (error) {
-			console.error('Download failed:', error);
-			throw error;
-		}
-	}
+      // Download words
+      console.log(`Downloading words (version: ${version.words_version})...`);
+      const wordsResponse = await fetch('/words.json', { cache: 'no-cache' });
+
+      if (!wordsResponse.ok) {
+        throw new Error('Failed to download words file');
+      }
+
+      const wordsData = await wordsResponse.json();
+
+      if (!wordsData.words || !Array.isArray(wordsData.words)) {
+        throw new Error('Invalid words data structure');
+      }
+
+      return { words: wordsData.words, version };
+    } catch (error) {
+      console.error('Download failed:', error);
+      throw error;
+    }
+  }
 }
