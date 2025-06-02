@@ -1,0 +1,37 @@
+{
+	"version": "1.0.0",
+	"last_updated": "2025-06-02T10:30:00Z",
+	"total_words": 20,
+	"words": [
+		{
+			"id": 1,
+			"word": "le",
+			"props": ["article", "masculine"],
+			"translations": ["определённый артикль"]
+		},
+		{ "id": 2, "word": "de", "props": ["preposition"], "translations": ["из", "от", "с"] },
+		{ "id": 3, "word": "un", "props": ["article", "masculine"], "translations": ["один", "некий"] },
+		{ "id": 4, "word": "à", "props": ["preposition"], "translations": ["в", "к", "на"] },
+		{ "id": 5, "word": "être", "props": ["verb"], "translations": ["быть", "являться"] },
+		{ "id": 6, "word": "et", "props": ["conjunction"], "translations": ["и"] },
+		{ "id": 7, "word": "en", "props": ["preposition"], "translations": ["в", "на"] },
+		{ "id": 8, "word": "avoir", "props": ["verb"], "translations": ["иметь", "обладать"] },
+		{
+			"id": 9,
+			"word": "que",
+			"props": ["conjunction", "pronoun"],
+			"translations": ["что", "который"]
+		},
+		{ "id": 10, "word": "pour", "props": ["preposition"], "translations": ["для", "за"] },
+		{ "id": 11, "word": "dans", "props": ["preposition"], "translations": ["в", "внутри"] },
+		{ "id": 12, "word": "ce", "props": ["pronoun", "adjective"], "translations": ["это", "этот"] },
+		{ "id": 13, "word": "il", "props": ["pronoun"], "translations": ["он"] },
+		{ "id": 14, "word": "avec", "props": ["preposition"], "translations": ["с", "вместе с"] },
+		{ "id": 15, "word": "ne", "props": ["adverb"], "translations": ["не"] },
+		{ "id": 16, "word": "se", "props": ["pronoun"], "translations": ["себя", "свой"] },
+		{ "id": 17, "word": "pas", "props": ["adverb"], "translations": ["не", "шаг"] },
+		{ "id": 18, "word": "tout", "props": ["adjective", "adverb"], "translations": ["всё", "весь"] },
+		{ "id": 19, "word": "pouvoir", "props": ["verb"], "translations": ["мочь", "уметь"] },
+		{ "id": 20, "word": "par", "props": ["preposition"], "translations": ["по", "через"] }
+	]
+}
