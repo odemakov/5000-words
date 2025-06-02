@@ -57,8 +57,8 @@ async function handleVersionRequest(request) {
 		} else {
 			throw new Error(`HTTP ${networkResponse.status}`);
 		}
-	} catch (error) {
-		console.log('Service Worker: Network failed for words-version.json, trying cache');
+	} catch (err) {
+		console.log('Service Worker: Network failed for words-version.json, trying cache', err);
 		const cache = await caches.open('version-cache-v1');
 		const cachedResponse = await cache.match(request);
 		return cachedResponse || new Response('{"error": "Offline"}', { status: 503 });
@@ -83,8 +83,8 @@ async function handleWordsRequest(request) {
 		} else {
 			throw new Error(`HTTP ${networkResponse.status}`);
 		}
-	} catch (error) {
-		console.log('Service Worker: Network failed, serving from cache', error);
+	} catch (err) {
+		console.log('Service Worker: Network failed, serving from cache', err);
 		return cachedResponse || new Response('{"error": "Offline"}', { status: 503 });
 	}
 }
@@ -103,8 +103,8 @@ async function defaultCacheStrategy(request) {
 		}
 
 		return networkResponse;
-	} catch (error) {
-		// Network failed, try cache
+	} catch (err) {
+		console.log('Service Worker: Network failed, trying cache', err);
 		const cachedResponse = await cache.match(request);
 
 		if (cachedResponse) {

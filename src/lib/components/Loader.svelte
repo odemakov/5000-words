@@ -29,7 +29,7 @@
 				// Check for updates
 				const { needsUpdate, version } = await Storage.checkForWordsUpdate();
 
-				if (!needsUpdate) {
+				if (!needsUpdate && version) {
 					console.log('Words are up to date');
 					ready = true;
 					loading = false;
@@ -38,24 +38,29 @@
 
 				// If update needed, download with the version we already retrieved
 				console.log('Downloading words...');
-				const { words } = await Storage.downloadWords(version);
+				if (version) {
+					const { words } = await Storage.downloadWords(version);
 
-				// Save to storage
-				Storage.saveWords(words);
-				Storage.saveVersion(version);
+					// Save to storage
+					Storage.saveWords(words);
+					Storage.saveVersion(version);
 
-				console.log(`Downloaded ${words.length} words (version: ${version.words_version})`);
+					console.log(`Downloaded ${words.length} words (version: ${version.words_version})`);
+				}
 			} else {
 				// No cached data, download everything
 				console.log('First-time download...');
-				const { needsUpdate, version } = await Storage.checkForWordsUpdate();
-				const { words } = await Storage.downloadWords(version);
+				const { version } = await Storage.checkForWordsUpdate();
+				
+				if (version) {
+					const { words } = await Storage.downloadWords(version);
 
-				// Save to storage
-				Storage.saveWords(words);
-				Storage.saveVersion(version);
+					// Save to storage
+					Storage.saveWords(words);
+					Storage.saveVersion(version);
 
-				console.log(`Downloaded ${words.length} words (version: ${version?.words_version})`);
+					console.log(`Downloaded ${words.length} words (version: ${version.words_version})`);
+				}
 			}
 
 			ready = true;
@@ -85,28 +90,28 @@
 	}
 </script>
 
-<div class="flex min-h-screen flex-col items-center justify-center p-6">
+<div class="flex min-h-screen w-full flex-col items-center justify-center px-4 py-6 md:p-6">
 	<!-- Header -->
-	<div class="mb-8 text-center">
-		<h1 class="mb-2 text-4xl font-bold text-blue-600">5000 Words</h1>
-		<p class="text-gray-600">Setting up your flashcards...</p>
+	<div class="mb-6 md:mb-8 text-center">
+		<h1 class="mb-2 text-3xl md:text-4xl font-bold text-blue-600">5000 Words</h1>
+		<p class="text-sm md:text-base text-gray-600">Setting up your flashcards...</p>
 	</div>
 
 	<!-- Loading State -->
 	{#if loading}
 		<div class="text-center">
 			<div
-				class="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
+				class="mb-4 h-12 w-12 md:h-16 md:w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
 			></div>
-			<p class="mb-2 text-gray-600">Loading 5000 French words...</p>
+			<p class="mb-2 text-sm md:text-base text-gray-600">Loading 5000 French words...</p>
 		</div>
 	{/if}
 
 	<!-- Error State -->
 	{#if error}
 		<div class="text-center">
-			<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-				<svg class="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<div class="mb-4 flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-full bg-red-100">
+				<svg class="h-6 w-6 md:h-8 md:w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path
 						stroke-linecap="round"
 						stroke-linejoin="round"
@@ -115,10 +120,10 @@
 					></path>
 				</svg>
 			</div>
-			<p class="mb-4 text-red-600">Download failed. Check connection and retry.</p>
+			<p class="mb-4 text-sm md:text-base text-red-600">Download failed. Check connection and retry.</p>
 			<button
 				onclick={handleRetry}
-				class="rounded-lg bg-red-500 px-6 py-2 text-white transition-colors hover:bg-red-600"
+				class="rounded-lg bg-red-500 px-4 py-2 md:px-6 md:py-2 text-sm md:text-base text-white transition-colors hover:bg-red-600"
 			>
 				Retry
 			</button>
@@ -128,16 +133,16 @@
 	<!-- Success State -->
 	{#if ready}
 		<div class="text-center">
-			<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-				<svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<div class="mb-4 flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-full bg-green-100">
+				<svg class="h-6 w-6 md:h-8 md:w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
 					></path>
 				</svg>
 			</div>
-			<p class="mb-6 text-green-600">Ready to start learning!</p>
+			<p class="mb-4 md:mb-6 text-sm md:text-base text-green-600">Ready to start learning!</p>
 			<button
 				onclick={handleStartClick}
-				class="rounded-lg bg-blue-600 px-8 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
+				class="rounded-lg bg-blue-600 px-6 py-2 md:px-8 md:py-3 text-base md:text-lg font-semibold text-white transition-colors hover:bg-blue-700 w-full max-w-xs md:w-auto"
 			>
 				Begin Level Test
 			</button>
