@@ -1,5 +1,7 @@
 const CACHE_NAME = '5000-words-v1';
-const urlsToCache = ['/', '/words.json'];
+const WORDS_VERSION = 'words-version.json';
+const WORDS = 'words.json';
+const urlsToCache = [];
 
 // Install event - cache app shell
 self.addEventListener('install', (event) => {
@@ -29,32 +31,50 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - custom caching strategies
 self.addEventListener('fetch', (event) => {
-	if (event.request.url.includes('words.json')) {
+	const url = event.request.url;
+
+	if (url.includes(WORDS_VERSION)) {
+		event.respondWith(handleVersionRequest(event.request));
+	} else if (url.includes(WORDS)) {
 		event.respondWith(handleWordsRequest(event.request));
 	} else {
 		event.respondWith(defaultCacheStrategy(event.request));
 	}
 });
 
-// Custom handler for words.json with daily update check
+// Always fetch words-version.json fresh (it's small)
+async function handleVersionRequest(request) {
+	try {
+		const networkResponse = await fetch(request, {
+			cache: 'no-cache',
+			headers: { 'Cache-Control': 'no-cache' }
+		});
+
+		if (networkResponse.ok) {
+			const cache = await caches.open('version-cache-v1');
+			cache.put(request, networkResponse.clone());
+			return networkResponse;
+		} else {
+			throw new Error(`HTTP ${networkResponse.status}`);
+		}
+	} catch (error) {
+		console.log('Service Worker: Network failed for words-version.json, trying cache');
+		const cache = await caches.open('version-cache-v1');
+		const cachedResponse = await cache.match(request);
+		return cachedResponse || new Response('{"error": "Offline"}', { status: 503 });
+	}
+}
+
+// Cache words.json with daily update check
 async function handleWordsRequest(request) {
 	const cache = await caches.open('words-cache-v1');
 	const cachedResponse = await cache.match(request);
 
-	// Check if we should update (once per day)
-	if (cachedResponse && !(await shouldCheckForUpdates())) {
-		console.log('Service Worker: Serving words.json from cache (checked today)');
-		return cachedResponse;
-	}
-
-	// Check network for updates
-	console.log('Service Worker: Checking for words.json updates...');
+	// Check network for updates - silent to avoid duplicate logs
 	try {
 		const networkResponse = await fetch(request, {
 			cache: 'no-cache',
-			headers: {
-				'Cache-Control': 'no-cache'
-			}
+			headers: { 'Cache-Control': 'no-cache' }
 		});
 
 		if (networkResponse.ok) {
@@ -65,7 +85,7 @@ async function handleWordsRequest(request) {
 		}
 	} catch (error) {
 		console.log('Service Worker: Network failed, serving from cache', error);
-		return cachedResponse || new Response('Offline', { status: 503 });
+		return cachedResponse || new Response('{"error": "Offline"}', { status: 503 });
 	}
 }
 
@@ -97,47 +117,5 @@ async function defaultCacheStrategy(request) {
 		}
 
 		return new Response('Offline', { status: 503 });
-	}
-}
-
-// Check if we should update words.json (once per day)
-async function shouldCheckForUpdates() {
-	try {
-		const lastCheck = await getLastCheckTimestamp();
-		const now = Date.now();
-		const oneDayMs = 24 * 60 * 60 * 1000;
-
-		if (!lastCheck || now - lastCheck > oneDayMs) {
-			await setLastCheckTimestamp(now);
-			return true;
-		}
-		return false;
-	} catch (error) {
-		console.log('Service Worker: Error checking update timestamp', error);
-		return true;
-	}
-}
-
-// Timestamp storage using Cache API
-async function getLastCheckTimestamp() {
-	try {
-		const cache = await caches.open('timestamp-cache');
-		const response = await cache.match('/last-check');
-		if (response) {
-			const timestamp = await response.text();
-			return parseInt(timestamp);
-		}
-	} catch (error) {
-		console.log('Service Worker: Error getting timestamp', error);
-	}
-	return null;
-}
-
-async function setLastCheckTimestamp(timestamp) {
-	try {
-		const cache = await caches.open('timestamp-cache');
-		await cache.put('/last-check', new Response(timestamp.toString()));
-	} catch (error) {
-		console.log('Service Worker: Error setting timestamp', error);
 	}
 }

@@ -1,130 +1,146 @@
 <script lang="ts">
-  import { onMount, createEventDispatcher } from 'svelte';
-  import { Storage, type WordData } from '../storage.js';
+	import { onMount, createEventDispatcher } from 'svelte';
+	import { Storage } from '../storage.js';
 
-  const dispatch = createEventDispatcher<{
-    wordsLoaded: void;
-  }>();
+	const dispatch = createEventDispatcher<{
+		wordsLoaded: void;
+	}>();
 
-  let loading = $state(false);
-  let error = $state(false);
-  let ready = $state(false);
+	let loading = $state(false);
+	let error = $state(false);
+	let ready = $state(false);
 
-  onMount(() => {
-    checkAndLoadWords();
-  });
+	onMount(() => {
+		checkAndLoadWords();
+	});
 
-  async function checkAndLoadWords() {
-    loading = true;
-    error = false;
-    ready = false;
+	async function checkAndLoadWords() {
+		loading = true;
+		error = false;
+		ready = false;
 
-    try {
-      // Check if we need to download words
-      const cachedWords = Storage.getWords();
-      const shouldUpdate = Storage.shouldCheckForUpdates();
+		try {
+			// Get cached data
+			const cachedWords = Storage.getWords();
+			const cachedVersion = Storage.getVersion();
 
-      if (cachedWords && !shouldUpdate) {
-        console.log('Using cached words');
-        ready = true;
-        loading = false;
-        return;
-      }
+			// If we have both cached words and version, we can check for updates
+			if (cachedWords && cachedVersion) {
+				// Check for updates
+				const { needsUpdate, version } = await Storage.checkForWordsUpdate();
 
-      console.log('Downloading words...');
-      
-      // Download words.json
-      const response = await fetch('/words.json', {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
+				if (!needsUpdate) {
+					console.log('Words are up to date');
+					ready = true;
+					loading = false;
+					return;
+				}
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+				// If update needed, download with the version we already retrieved
+				console.log('Downloading words...');
+				const { words } = await Storage.downloadWords(version);
 
-      const data = await response.json();
+				// Save to storage
+				Storage.saveWords(words);
+				Storage.saveVersion(version);
 
-      // Validate data structure
-      if (!data.words || !Array.isArray(data.words) || data.words.length === 0) {
-        throw new Error('Invalid words data structure');
-      }
+				console.log(`Downloaded ${words.length} words (version: ${version.words_version})`);
+			} else {
+				// No cached data, download everything
+				console.log('First-time download...');
+				const { needsUpdate, version } = await Storage.checkForWordsUpdate();
+				const { words } = await Storage.downloadWords(version);
 
-      // Save to storage
-      Storage.saveWords(data.words);
-      Storage.saveWordsVersion(data.version || '1.0.0');
+				// Save to storage
+				Storage.saveWords(words);
+				Storage.saveVersion(version);
 
-      console.log(`Loaded ${data.words.length} words (version: ${data.version})`);
-      
-      ready = true;
-      loading = false;
+				console.log(`Downloaded ${words.length} words (version: ${version?.words_version})`);
+			}
 
-    } catch (err) {
-      console.error('Failed to load words:', err);
-      error = true;
-      loading = false;
-    }
-  }
+			ready = true;
+			loading = false;
+		} catch (err) {
+			console.error('Failed to load words:', err);
 
-  function handleStartClick() {
-    dispatch('wordsLoaded');
-  }
+			// Try to use cached words as fallback
+			const cachedWords = Storage.getWords();
+			if (cachedWords) {
+				console.log('Using cached words as fallback');
+				ready = true;
+				loading = false;
+			} else {
+				error = true;
+				loading = false;
+			}
+		}
+	}
 
-  function handleRetry() {
-    checkAndLoadWords();
-  }
+	function handleStartClick() {
+		dispatch('wordsLoaded');
+	}
+
+	function handleRetry() {
+		checkAndLoadWords();
+	}
 </script>
 
 <div class="flex min-h-screen flex-col items-center justify-center p-6">
-  <!-- Header -->
-  <div class="mb-8 text-center">
-    <h1 class="mb-2 text-4xl font-bold text-blue-600">5000 Words</h1>
-    <p class="text-gray-600">Setting up your flashcards...</p>
-  </div>
+	<!-- Header -->
+	<div class="mb-8 text-center">
+		<h1 class="mb-2 text-4xl font-bold text-blue-600">5000 Words</h1>
+		<p class="text-gray-600">Setting up your flashcards...</p>
+	</div>
 
-  <!-- Loading State -->
-  {#if loading}
-    <div class="text-center">
-      <div class="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
-      <p class="mb-2 text-gray-600">Loading 5000 French words...</p>
-    </div>
-  {/if}
+	<!-- Loading State -->
+	{#if loading}
+		<div class="text-center">
+			<div
+				class="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
+			></div>
+			<p class="mb-2 text-gray-600">Loading 5000 French words...</p>
+		</div>
+	{/if}
 
-  <!-- Error State -->
-  {#if error}
-    <div class="text-center">
-      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-        <svg class="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-      </div>
-      <p class="mb-4 text-red-600">Download failed. Check connection and retry.</p>
-      <button 
-        onclick={handleRetry}
-        class="rounded-lg bg-red-500 px-6 py-2 text-white transition-colors hover:bg-red-600"
-      >
-        Retry
-      </button>
-    </div>
-  {/if}
+	<!-- Error State -->
+	{#if error}
+		<div class="text-center">
+			<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+				<svg class="h-8 w-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+					></path>
+				</svg>
+			</div>
+			<p class="mb-4 text-red-600">Download failed. Check connection and retry.</p>
+			<button
+				onclick={handleRetry}
+				class="rounded-lg bg-red-500 px-6 py-2 text-white transition-colors hover:bg-red-600"
+			>
+				Retry
+			</button>
+		</div>
+	{/if}
 
-  <!-- Success State -->
-  {#if ready}
-    <div class="text-center">
-      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-        <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-      </div>
-      <p class="mb-6 text-green-600">Ready to start learning!</p>
-      <button 
-        onclick={handleStartClick}
-        class="rounded-lg bg-blue-600 px-8 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
-      >
-        Begin Level Test
-      </button>
-    </div>
-  {/if}
+	<!-- Success State -->
+	{#if ready}
+		<div class="text-center">
+			<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+				<svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+					></path>
+				</svg>
+			</div>
+			<p class="mb-6 text-green-600">Ready to start learning!</p>
+			<button
+				onclick={handleStartClick}
+				class="rounded-lg bg-blue-600 px-8 py-3 text-lg font-semibold text-white transition-colors hover:bg-blue-700"
+			>
+				Begin Level Test
+			</button>
+		</div>
+	{/if}
 </div>

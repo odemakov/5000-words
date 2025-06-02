@@ -11,6 +11,13 @@ export interface WordData {
 	translations: string[];
 }
 
+export interface VersionInfo {
+	words_version: string;
+	last_updated: string;
+	total_words: number;
+	changelog?: string;
+}
+
 export interface UserProgress {
 	knownWords: number[];
 	learnedWords: number[];
@@ -73,11 +80,11 @@ export class Storage {
 		return this.save(words_data, words);
 	}
 
-	static getWordsVersion(): string | null {
-		return this.load<string>(words_version);
+	static getVersion(): VersionInfo | null {
+		return this.load<VersionInfo>(words_version);
 	}
 
-	static saveWordsVersion(version: string): boolean {
+	static saveVersion(version: VersionInfo): boolean {
 		return this.save(words_version, version);
 	}
 
@@ -104,15 +111,80 @@ export class Storage {
 		return this.save(user_progress, progress);
 	}
 
-	static shouldCheckForUpdates(): boolean {
-		const lastCheck = localStorage.getItem('last_words_check');
-		const now = Date.now();
-		const oneDayMs = 24 * 60 * 60 * 1000;
+	static async fetchVersionInfo(): Promise<VersionInfo> {
+		console.log('Fetching version info from network...');
+		const response = await fetch('/words-version.json', {
+			cache: 'no-cache',
+			headers: { 'Cache-Control': 'no-cache' }
+		});
 
-		if (!lastCheck || now - parseInt(lastCheck) > oneDayMs) {
-			localStorage.setItem('last_words_check', now.toString());
-			return true;
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
 		}
-		return false;
+
+		return (await response.json()) as VersionInfo;
+	}
+
+	static async checkForWordsUpdate(): Promise<{
+		needsUpdate: boolean;
+		version: VersionInfo | null;
+	}> {
+		try {
+			const newVersion = await this.fetchVersionInfo();
+			const cachedVersion = this.getVersion();
+
+			// Compare versions
+			if (!cachedVersion || cachedVersion.words_version !== newVersion.words_version) {
+				console.log(
+					`Version update available: ${cachedVersion?.words_version || 'none'} -> ${newVersion.words_version}`
+				);
+				return { needsUpdate: true, version: newVersion };
+			}
+
+			return { needsUpdate: false, version: cachedVersion };
+		} catch (error) {
+			console.error('Failed to check version:', error);
+			// If version check fails, assume update needed if we have no cached words
+			return { needsUpdate: !this.getWords(), version: null };
+		}
+	}
+
+	static async downloadWords(
+		versionInfo?: VersionInfo | null
+	): Promise<{ words: WordData[]; version: VersionInfo }> {
+		try {
+			// If version info wasn't provided, use what we have
+			let version = versionInfo;
+
+			if (!version) {
+				// Try to get cached version info
+				version = this.getVersion();
+			}
+
+			// If we still don't have version info, fetch it
+			if (!version) {
+				console.log('Downloading version info...');
+				version = await this.fetchVersionInfo();
+			}
+
+			// Download words
+			console.log(`Downloading words (version: ${version.words_version})...`);
+			const wordsResponse = await fetch('/words.json', { cache: 'no-cache' });
+
+			if (!wordsResponse.ok) {
+				throw new Error('Failed to download words file');
+			}
+
+			const wordsData = await wordsResponse.json();
+
+			if (!wordsData.words || !Array.isArray(wordsData.words)) {
+				throw new Error('Invalid words data structure');
+			}
+
+			return { words: wordsData.words, version };
+		} catch (error) {
+			console.error('Download failed:', error);
+			throw error;
+		}
 	}
 }

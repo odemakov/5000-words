@@ -1,0 +1,6 @@
+{
+	"words_version": "1.0.0",
+	"last_updated": "2025-06-02T11:30:00Z",
+	"total_words": 5000,
+	"changelog": "Initial release with 5000 sample words, some without transactions"
+}
