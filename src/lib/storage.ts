@@ -72,8 +72,9 @@ export class Storage {
   }
 
   // App-specific methods
-  static getWords(): WordData[] | null {
-    return this.load<WordData[]>(words_data);
+  static getWords(min: number = 0, max: number = Infinity): WordData[] | null {
+    const words = this.load<WordData[]>(words_data);
+    return words?.slice(min, max) || null;
   }
 
   static saveWords(words: WordData[]): boolean {

@@ -1,4 +1,5 @@
-import { writable, derived, get } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
+import { Storage } from '../storage.js';
 
 // Word interface matching the data structure
 export interface WordData {
@@ -70,18 +71,9 @@ export const progress = derived<typeof testState, Progress>(testState, ($state) 
 // Functions to get words from a specific range (mock implementation)
 // In a real app, this would fetch from an API or local storage
 async function getWordsFromRange(min: number, max: number, count = 10): Promise<WordData[]> {
-  // For testing purposes - replace with actual data source
-  const mockWords: WordData[] = [];
-  for (let i = 0; i < count; i++) {
-    const id = min + i;
-    mockWords.push({
-      id,
-      word: `frenchWord${id}`,
-      props: ['noun', 'masculine'],
-      translations: [`russianTranslation${id}`, `anotherTranslation${id}`]
-    });
-  }
-  return mockWords;
+  const words = Storage.getWords(min, max);
+  // return random count words from the list
+  return words?.sort(() => Math.random() - 0.5).slice(0, count) || [];
 }
 
 // Actions
