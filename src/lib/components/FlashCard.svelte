@@ -21,43 +21,97 @@
     isFlipped = !isFlipped;
   }
 
+  function handleClickRight() {
+    console.log('handleClickRight');
+    iKnow();
+  }
+
+  function handleClickLeft() {
+    console.log('handleClickLeft');
+    iDontKnow();
+  }
+  function handleClickUp() {
+    console.log('handleClickUp');
+    iLearned();
+  }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        handleTap();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        handleClickRight();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        handleClickLeft();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        handleClickUp();
+        break;
+    }
+  }
+
+  function handleArrowKeyDown(e: KeyboardEvent, action: () => void) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      action();
+    }
+  }
+
   function handleTouchStart(e: TouchEvent) {
+    console.log('Touch start');
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
   }
 
+  // Reset swipe animations
+  function resetAnimations() {
+    setTimeout(() => {
+      isSwipingRight = false;
+      isSwipingLeft = false;
+      isSwipingUp = false;
+    }, 300);
+  }
+
+  function iDontKnow() {
+    isSwipingLeft = true;
+    resetAnimations();
+    onSwipeLeft(); // "Don't know"
+  }
+  function iKnow() {
+    isSwipingRight = true;
+    resetAnimations();
+    onSwipeRight(); // "I know this word"
+  }
+  function iLearned() {
+    isSwipingUp = true;
+    resetAnimations();
+    onSwipeUp(); // "I learned this word" (only used in main learning)
+  }
+
   function handleTouchEnd(e: TouchEvent) {
+    console.log('Touch end');
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
 
     const deltaX = touchEndX - touchStartX;
     const deltaY = touchEndY - touchStartY;
 
-    // Reset swipe animations
-    const resetAnimations = () => {
-      setTimeout(() => {
-        isSwipingRight = false;
-        isSwipingLeft = false;
-        isSwipingUp = false;
-      }, 300);
-    };
-
     // Detect swipe direction
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
       if (deltaX > 0) {
-        isSwipingRight = true;
-        resetAnimations();
-        onSwipeRight(); // "I know this word"
+        iKnow();
       } else {
-        isSwipingLeft = true;
-        resetAnimations();
-        onSwipeLeft(); // "Don't know"
+        iDontKnow();
       }
     } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
       if (deltaY < 0) {
-        isSwipingUp = true;
-        resetAnimations();
-        onSwipeUp(); // "I learned this word" (only used in main learning)
+        iLearned();
       }
     }
   }
@@ -69,7 +123,7 @@
   class:translate-x-[-100%]={isSwipingLeft}
   class:translate-y-[-100%]={isSwipingUp}
   on:click={handleTap}
-  on:keydown={(e) => e.key === 'Enter' && handleTap()}
+  on:keydown={handleKeyDown}
   role="button"
   tabindex="0"
   on:touchstart={handleTouchStart}
@@ -102,9 +156,13 @@
     </div>
   </div>
 
-  <!-- Swipe indicators -->
+  <!-- Swipe/Click indicators -->
   <div
-    class="pointer-events-none absolute inset-x-0 top-0 flex h-8 items-center justify-center opacity-50"
+    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-x-0 top-0 z-50 flex h-12 cursor-pointer items-center justify-center bg-gray-50 transition-colors"
+    on:click|stopPropagation={handleClickUp}
+    on:keydown={(e) => handleArrowKeyDown(e, handleClickUp)}
+    role="button"
+    tabindex="-1"
   >
     <svg
       class="h-6 w-6 text-green-500"
@@ -122,7 +180,11 @@
     </svg>
   </div>
   <div
-    class="pointer-events-none absolute inset-y-0 right-0 flex w-8 items-center justify-center opacity-50"
+    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-y-0 right-0 z-50 flex w-12 cursor-pointer items-center justify-center bg-gray-50 transition-colors"
+    on:click|stopPropagation={handleClickRight}
+    on:keydown={(e) => handleArrowKeyDown(e, handleClickRight)}
+    role="button"
+    tabindex="-2"
   >
     <svg
       class="h-6 w-6 text-green-500"
@@ -135,7 +197,11 @@
     </svg>
   </div>
   <div
-    class="pointer-events-none absolute inset-y-0 left-0 flex w-8 items-center justify-center opacity-50"
+    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-y-0 left-0 z-40 flex w-12 cursor-pointer items-center justify-center bg-gray-50 transition-colors"
+    on:click|stopPropagation={handleClickLeft}
+    on:keydown={(e) => handleArrowKeyDown(e, handleClickLeft)}
+    role="button"
+    tabindex="-3"
   >
     <svg
       class="h-6 w-6 text-red-500"
