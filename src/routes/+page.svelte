@@ -78,7 +78,7 @@
         known: response
       }));
 
-      await LearningController.initializeLearning(
+      await LearningController.initializeQueueFilling(
         detectedLevel as 'A1' | 'A2' | 'B1' | 'B2',
         testResults
       );
@@ -97,10 +97,6 @@
   function handleSwipeLeft() {
     // User doesn't know this word
     recordResponse(false);
-  }
-
-  function handleSwipeUp() {
-    // Not used in test mode, but included for completeness
   }
 
   function handleUndo() {
@@ -145,7 +141,6 @@
             translations={word?.translations || []}
             onSwipeRight={handleSwipeRight}
             onSwipeLeft={handleSwipeLeft}
-            onSwipeUp={handleSwipeUp}
           />
 
           <div class="mt-8 w-full max-w-md text-center text-sm text-gray-500">

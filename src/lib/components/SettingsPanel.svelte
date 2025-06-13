@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { DailyStats } from '../types/learning.js';
-  import { LearningController } from '../controllers/LearningController.js';
+  import { LearningController, learningState } from '../controllers/LearningController.js';
   import { Storage } from '../storage.js';
 
   export let onClose: () => void;
@@ -16,25 +16,30 @@
   let theme: 'light' | 'dark' = 'light';
   let soundEffects = true;
   let dailyGoal = 20;
+  let backwardQueueLength = 30;
 
   // Load saved settings on component mount
   function loadSettings() {
-    const settings = Storage.load('app_settings') as Record<string, unknown>;
+    const settings = Storage.getAppSettings();
     if (settings) {
       fontSize = (settings.fontSize as 'small' | 'medium' | 'large') || 'medium';
       theme = (settings.theme as 'light' | 'dark') || 'light';
       soundEffects = settings.soundEffects !== false;
       dailyGoal = (settings.dailyGoal as number) || 20;
+      backwardQueueLength = (settings.backwardQueueLength as number) || 30;
     }
+    // Also load from learning controller
+    backwardQueueLength = $learningState.backwardQueueLength;
   }
 
   // Save settings
   function saveSettings() {
-    Storage.save('app_settings', {
+    Storage.saveAppSettings({
       fontSize,
       theme,
       soundEffects,
-      dailyGoal
+      dailyGoal,
+      backwardQueueLength
     });
   }
 
@@ -137,7 +142,11 @@
   }
 
   // Save other settings when they change
-  $: if (soundEffects !== undefined && dailyGoal !== undefined) {
+  $: if (
+    soundEffects !== undefined &&
+    dailyGoal !== undefined &&
+    backwardQueueLength !== undefined
+  ) {
     saveSettings();
   }
 
@@ -258,6 +267,34 @@
           <span class="font-medium text-blue-600">{dailyGoal} words</span>
           <span>50 words</span>
         </div>
+      </div>
+
+      <!-- Backward Queue Length -->
+      <div class="mb-4">
+        <label class="mb-2 block text-sm text-gray-700" for="backward-queue-length"
+          >Backward Queue Size</label
+        >
+        <input
+          id="backward-queue-length"
+          type="range"
+          min="10"
+          max="100"
+          step="10"
+          bind:value={backwardQueueLength}
+          on:input={() => {
+            learningState.update((s) => ({ ...s, backwardQueueLength }));
+            LearningController.saveState();
+          }}
+          class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
+        />
+        <div class="mt-1 flex justify-between text-xs text-gray-500">
+          <span>10 words</span>
+          <span class="font-medium text-blue-600">{backwardQueueLength} words</span>
+          <span>100 words</span>
+        </div>
+        <p class="mt-1 text-xs text-gray-500">
+          How many words to practice in reverse (Russian → French) before moving to reviews
+        </p>
       </div>
 
       <!-- Sound Effects -->

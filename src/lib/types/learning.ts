@@ -25,6 +25,9 @@ export interface LearningState {
   currentMode: 'learning' | 'reviews';
   currentDirection: 'forward' | 'backward';
 
+  // User settings
+  backwardQueueLength: number; // User-defined size for backward queue
+
   // Session tracking
   lastActivity: number;
   sessionStartTime: number;
@@ -83,6 +86,7 @@ export interface AppSettings {
   soundEffects: boolean;
   autoAdvance: boolean;
   dailyGoal: number;
+  backwardQueueLength: number;
 }
 
 // Session data for analytics

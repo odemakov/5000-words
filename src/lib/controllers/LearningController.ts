@@ -23,6 +23,7 @@ const createDefaultState = (): LearningState => ({
   learnedList: [],
   currentMode: 'learning',
   currentDirection: 'forward',
+  backwardQueueLength: 30,
   lastActivity: Date.now(),
   sessionStartTime: Date.now(),
   todayStats: {
@@ -192,79 +193,7 @@ export class LearningController {
 
     learningState.set(initialState);
 
-    // Fill initial forward queue
-    await this.fillForwardQueue();
     this.saveState();
-  }
-
-  static async fillForwardQueue() {
-    const state = get(learningState);
-    const targetSize = 30;
-    const currentSize = state.forwardQueue.length;
-    const neededWords = Math.max(0, targetSize - currentSize);
-
-    if (neededWords === 0) return;
-
-    const words = getWordsData();
-    const maxIndex = this.getMaxIndexForLevel(state.detectedLevel);
-    const allUsedIndices = new Set([
-      ...state.forwardQueue.map((w) => w.wordIndex),
-      ...state.backwardQueue.map((w) => w.wordIndex),
-      ...state.recap7.map((w) => w.wordIndex),
-      ...state.recap14.map((w) => w.wordIndex),
-      ...state.recap30.map((w) => w.wordIndex),
-      ...state.learnedList
-    ]);
-
-    // 80% new words, 20% due recap words
-    const newWordsCount = Math.floor(neededWords * 0.8);
-    const recapWordsCount = neededWords - newWordsCount;
-
-    // Get new words
-    const newWords: WordInQueue[] = [];
-    let currentIndex = state.progress;
-
-    while (newWords.length < newWordsCount && currentIndex <= maxIndex) {
-      if (!allUsedIndices.has(currentIndex) && currentIndex < words.length) {
-        newWords.push({
-          wordIndex: currentIndex,
-          addedAt: Date.now(),
-          attempts: 0
-        });
-      }
-      currentIndex++;
-    }
-
-    // Get due recap words
-    const now = Date.now();
-    const allRecapWords = [...state.recap7, ...state.recap14, ...state.recap30]
-      .filter((word) => word.dueDate <= now)
-      .sort((a, b) => a.dueDate - b.dueDate)
-      .slice(0, recapWordsCount);
-
-    const recapWords: WordInQueue[] = allRecapWords.map((recap) => ({
-      wordIndex: recap.wordIndex,
-      addedAt: Date.now(),
-      attempts: recap.attempts
-    }));
-
-    // Update state
-    learningState.update((state) => ({
-      ...state,
-      forwardQueue: [...state.forwardQueue, ...newWords, ...recapWords],
-      progress: Math.max(state.progress, currentIndex)
-    }));
-  }
-
-  static async fillBackwardQueue() {
-    const state = get(learningState);
-    const targetSize = 30;
-    const neededWords = Math.max(0, targetSize - state.backwardQueue.length);
-
-    if (neededWords === 0) return;
-
-    // For now, backward queue is filled from forward queue completions
-    // This method can be enhanced later if needed
   }
 
   static async processCardResponse(known: boolean) {
@@ -298,10 +227,6 @@ export class LearningController {
     // Auto-switch direction if needed
     this.updateCurrentDirection();
 
-    // Refill queues if needed
-    await this.fillForwardQueue();
-    await this.fillBackwardQueue();
-
     this.saveState();
   }
 
@@ -318,6 +243,7 @@ export class LearningController {
           attempts: (card.attempts || 0) + 1
         };
 
+        // Don't automatically refill, just update queue
         return {
           ...state,
           forwardQueue: newForwardQueue,
@@ -328,8 +254,11 @@ export class LearningController {
           }
         };
       } else {
-        // Reinsert randomly into positions 10-30 of forward queue
-        const insertPos = Math.min(Math.floor(Math.random() * 20) + 10, newForwardQueue.length);
+        // Reinsert randomly into second half of the queue
+        const queueLength = newForwardQueue.length;
+        const halfLength = Math.floor(queueLength / 2);
+        // Insert position: from half length to end of queue
+        const insertPos = halfLength + Math.floor(Math.random() * (queueLength - halfLength + 1));
 
         const updatedItem: WordInQueue = {
           wordIndex: card.wordIndex,
@@ -381,7 +310,7 @@ export class LearningController {
           }
         };
       } else {
-        // Reinsert randomly into positions 10-30 of backward queue
+        // Reinsert randomly into second half of thepositions 10-30 of backward queue
         const insertPos = Math.min(Math.floor(Math.random() * 20) + 10, newBackwardQueue.length);
 
         const updatedItem: WordInQueue = {
@@ -575,5 +504,110 @@ export class LearningController {
       null,
       2
     );
+  }
+
+  // Queue filling methods for initial population
+  static async initializeQueueFilling(
+    detectedLevel: 'A1' | 'A2' | 'B1' | 'B2',
+    testResults: Array<{ wordId: number; known: boolean }>
+  ) {
+    const startingIndex = this.getStartingIndexForLevel(detectedLevel);
+    const now = Date.now();
+
+    // Create initial state without auto-filling queue
+    const initialState: LearningState = {
+      ...createDefaultState(),
+      detectedLevel,
+      levelTestResults: testResults,
+      progress: startingIndex,
+      sessionStartTime: now,
+      lastActivity: now,
+      currentMode: 'learning' // Will be used for queue filling initially
+    };
+
+    learningState.set(initialState);
+    this.saveState();
+  }
+
+  static getCurrentQueueFillingWord(): {
+    word: string;
+    props: string[];
+    translations: string[];
+    index: number;
+  } | null {
+    const state = get(learningState);
+    const words = getWordsData();
+    const maxIndex = this.getMaxIndexForLevel(state.detectedLevel);
+
+    const allUsedIndices = new Set([
+      ...state.forwardQueue.map((w) => w.wordIndex),
+      ...state.backwardQueue.map((w) => w.wordIndex),
+      ...state.recap7.map((w) => w.wordIndex),
+      ...state.recap14.map((w) => w.wordIndex),
+      ...state.recap30.map((w) => w.wordIndex),
+      ...state.learnedList
+    ]);
+
+    // Find next unused word starting from current progress
+    let currentIndex = state.progress;
+    while (currentIndex <= maxIndex) {
+      if (!allUsedIndices.has(currentIndex) && currentIndex < words.length) {
+        const wordData = words[currentIndex];
+        if (wordData) {
+          return {
+            word: wordData.word,
+            props: wordData.props,
+            translations: wordData.translations,
+            index: currentIndex
+          };
+        }
+      }
+      currentIndex++;
+    }
+
+    return null; // No more words available
+  }
+
+  static addWordToQueue(wordIndex: number) {
+    const now = Date.now();
+    learningState.update((state) => ({
+      ...state,
+      forwardQueue: [
+        ...state.forwardQueue,
+        {
+          wordIndex,
+          addedAt: now,
+          attempts: 0
+        }
+      ],
+      progress: Math.max(state.progress, wordIndex + 1),
+      lastActivity: now
+    }));
+    this.saveState();
+  }
+
+  static addWordToLearned(wordIndex: number) {
+    const now = Date.now();
+    learningState.update((state) => ({
+      ...state,
+      learnedList: [...state.learnedList, wordIndex],
+      progress: Math.max(state.progress, wordIndex + 1),
+      wordsLearned: state.wordsLearned + 1,
+      lastActivity: now
+    }));
+    this.saveState();
+  }
+
+  static canStartLearning(): boolean {
+    const state = get(learningState);
+    return state.forwardQueue.length >= 10;
+  }
+
+  static getQueueFillingStats() {
+    const state = get(learningState);
+    return {
+      learnedCount: state.learnedList.length,
+      canSwitchToLearning: this.canStartLearning()
+    };
   }
 }

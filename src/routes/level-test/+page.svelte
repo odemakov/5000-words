@@ -35,10 +35,6 @@
     recordResponse(false);
   }
 
-  function handleSwipeUp() {
-    // Not used in test mode, but included for completeness
-  }
-
   function handleUndo() {
     undo();
   }
@@ -71,7 +67,6 @@
         translations={word?.translations || []}
         onSwipeRight={handleSwipeRight}
         onSwipeLeft={handleSwipeLeft}
-        onSwipeUp={handleSwipeUp}
       />
 
       <div class="mt-8 w-full max-w-md text-center text-sm text-gray-500">

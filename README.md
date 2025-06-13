@@ -130,7 +130,6 @@ interface LearningState {
 - **Tap**: Flip flashcard to reveal translation
 - **Swipe Left**: Mark as unknown (red feedback)
 - **Swipe Right**: Mark as known (green feedback)
-- **Swipe Up**: Alternative action (context-dependent)
 
 ### Visual Design
 - **Color System**: Green (success), Red (failure), Blue (primary), Yellow/Orange/Green (review tiers)

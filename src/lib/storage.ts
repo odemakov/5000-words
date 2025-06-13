@@ -4,6 +4,7 @@ const words_version = prefix + 'words_version';
 const user_progress = prefix + 'user_progress';
 const user_level = prefix + 'user_level';
 const learning_state = prefix + 'learning_state';
+const app_settings = prefix + 'app_settings';
 
 export interface WordData {
   id: number;
@@ -17,6 +18,14 @@ export interface VersionInfo {
   last_updated: string;
   total_words: number;
   changelog?: string;
+}
+
+export interface AppSettings {
+  fontSize: 'small' | 'medium' | 'large';
+  theme: 'light' | 'dark';
+  soundEffects: boolean;
+  dailyGoal: number;
+  backwardQueueLength: number;
 }
 
 export interface UserProgress {
@@ -86,6 +95,14 @@ export class Storage {
 
   static saveWords(words: WordData[]): boolean {
     return this.save(words_data, words);
+  }
+
+  static getAppSettings(): AppSettings | null {
+    return this.load<AppSettings>(app_settings);
+  }
+
+  static saveAppSettings(settings: AppSettings): boolean {
+    return this.save(app_settings, settings);
   }
 
   static getVersion(): VersionInfo | null {

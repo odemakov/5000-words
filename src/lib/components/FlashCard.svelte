@@ -8,7 +8,6 @@
   // Callback props instead of event dispatcher
   export let onSwipeRight = () => {};
   export let onSwipeLeft = () => {};
-  export let onSwipeUp = () => {};
 
   // Determine what to show based on direction
   $: frontText = direction === 'forward' ? word : translations[0] || '';
@@ -29,17 +28,11 @@
   }
 
   function handleClickRight() {
-    console.log('handleClickRight');
     iKnow();
   }
 
   function handleClickLeft() {
-    console.log('handleClickLeft');
     iDontKnow();
-  }
-  function handleClickUp() {
-    console.log('handleClickUp');
-    iLearned();
   }
 
   function handleKeyDown(e: KeyboardEvent) {
@@ -55,10 +48,6 @@
       case 'ArrowLeft':
         e.preventDefault();
         handleClickLeft();
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        handleClickUp();
         break;
     }
   }
@@ -95,11 +84,6 @@
     resetAnimations();
     onSwipeRight(); // "I know this word"
   }
-  function iLearned() {
-    isSwipingUp = true;
-    resetAnimations();
-    onSwipeUp(); // "I learned this word" (only used in main learning)
-  }
 
   function handleTouchEnd(e: TouchEvent) {
     console.log('Touch end');
@@ -115,10 +99,6 @@
         iKnow();
       } else {
         iDontKnow();
-      }
-    } else if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 50) {
-      if (deltaY < 0) {
-        iLearned();
       }
     }
   }
@@ -174,29 +154,7 @@
 
   <!-- Swipe/Click indicators -->
   <div
-    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-x-0 top-0 z-50 flex h-12 cursor-pointer items-center justify-center bg-gray-50 transition-colors"
-    on:click|stopPropagation={handleClickUp}
-    on:keydown={(e) => handleArrowKeyDown(e, handleClickUp)}
-    role="button"
-    tabindex="-1"
-  >
-    <svg
-      class="h-6 w-6 text-green-500"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M5 10l7-7m0 0l7 7m-7-7v18"
-      ></path>
-    </svg>
-  </div>
-  <div
-    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-y-0 right-0 z-50 flex w-12 cursor-pointer items-center justify-center bg-gray-50 transition-colors"
+    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-y-0 right-0 z-50 flex w-12 cursor-pointer items-center justify-center transition-colors"
     on:click|stopPropagation={handleClickRight}
     on:keydown={(e) => handleArrowKeyDown(e, handleClickRight)}
     role="button"
@@ -213,7 +171,7 @@
     </svg>
   </div>
   <div
-    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-y-0 left-0 z-40 flex w-12 cursor-pointer items-center justify-center bg-gray-50 transition-colors"
+    class="bg-opacity-40 hover:bg-opacity-60 absolute inset-y-0 left-0 z-40 flex w-12 cursor-pointer items-center justify-center transition-colors"
     on:click|stopPropagation={handleClickLeft}
     on:keydown={(e) => handleArrowKeyDown(e, handleClickLeft)}
     role="button"
