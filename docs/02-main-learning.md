@@ -9,9 +9,9 @@ Primary learning screen with spaced repetition system using multiple queues. Use
 ### Initial Queue Filling
 - User is shown words starting from their detected level
 - Two options for each word:
-  - Swipe right: "I know this word" → move to recap7
+  - Swipe right: "I know this word" → move learned list
   - Swipe left: "I don't know this word" → move to currentQueue
-- Continue until currentQueue reaches 30 words
+- Continue until user switch to learning. Minimum 10 words.
 
 ### Learning Modes
 
@@ -22,23 +22,23 @@ Primary learning screen with spaced repetition system using multiple queues. Use
 
 ### Queue System
 
-**currentQueue (30 words max):**
+**currentQueue (10 words min):**
 - Intensive learning phase
 - Swipe right: "I know this word" → move to recap7
 - Swipe left: "I don't know this word" → shuffle back to positions 10-30
-- Auto-refills to 30 words when user continues learning
+- Ask user to refill if he wants
 
 **Queue Refill Logic:**
-- **80%**: Next words in frequency order
+- **80%**: Next words in frequency order, except ones in learnedList
 - **20%**: Ready recap words (past their review date)
 - When user reaches word 5000: 100% recap words only
-- If no recap words available: force user to reviews mode
+- If no new and no recap words available: game over?
 
 **Recap Queues (spaced repetition):**
 - **recap7** - Review after 7 days
 - **recap14** - Review after 14 days
 - **recap30** - Review after 30 days
-- Swipe right: Move to next stage (recap7→recap14→recap30→fully learned)
+- Swipe right: Move to next stage (recap7→recap14→recap30→learnedList)
 - Swipe left: Demote back to currentQueue
 
 ### Reverse Learning (Mandatory)
@@ -56,7 +56,7 @@ Primary learning screen with spaced repetition system using multiple queues. Use
 ### Progress Tracking
 - **Forward Progress**: Highest word index in currentQueue
 - **Reverse Progress**: Highest word index in currentQueueReverse
-- **New Words Learned**: currentQueue → recap7 progressions
+- **New Words Learned**: Count of learnedList + count of recap30
 - **Words Reviewed**: All successful recap queue progressions
 - Display: "New: 156 words | Reviewed: 342 words"
 - Separate progress tracking for each direction
