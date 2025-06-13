@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import { Storage } from '../lib/storage.js';
+  import { LearningController } from '../lib/controllers/LearningController.js';
   import Loader from '../lib/components/Loader.svelte';
   import FlashCard from '$lib/components/FlashCard.svelte';
   import ProgressBar from '$lib/components/ProgressBar.svelte';
@@ -32,8 +34,12 @@
     // Determine initial state
     const hasWords = Storage.getWords();
     const userLevel = Storage.getUserLevel();
+    const learningState = Storage.getLearningState();
 
-    if (hasWords && userLevel) {
+    if (hasWords && userLevel && learningState) {
+      // User has completed setup and has learning progress
+      goto('/learning');
+    } else if (hasWords && userLevel) {
       currentState = 'learning';
     } else if (hasWords) {
       currentState = 'landing';
@@ -61,12 +67,25 @@
     loadTestBatch(1, 100);
   }
 
-  function handleLandingComplete() {
+  async function handleLandingComplete() {
     // Save the detected level
     if (detectedLevel) {
       Storage.setUserLevel(detectedLevel);
+
+      // Initialize learning controller with test results
+      const testResults = $testState.responses.map((response, index) => ({
+        wordId: index,
+        known: response
+      }));
+
+      await LearningController.initializeLearning(
+        detectedLevel as 'A1' | 'A2' | 'B1' | 'B2',
+        testResults
+      );
+
+      // Navigate to learning page
+      goto('/learning');
     }
-    currentState = 'learning';
   }
 
   // Level test handlers
@@ -149,7 +168,13 @@
     </div>
   {:else if currentState === 'learning'}
     <div class="flex min-h-screen items-center justify-center p-4">
-      <p class="text-center text-xl text-gray-600">Learning component coming next...</p>
+      <div class="text-center">
+        <div
+          class="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"
+        ></div>
+        <p class="mb-2 text-xl text-gray-600">Setting up your learning experience...</p>
+        <p class="text-sm text-gray-500">This will only take a moment</p>
+      </div>
     </div>
   {/if}
 </main>

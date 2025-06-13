@@ -3,6 +3,7 @@ const words_data = prefix + 'words_data';
 const words_version = prefix + 'words_version';
 const user_progress = prefix + 'user_progress';
 const user_level = prefix + 'user_level';
+const learning_state = prefix + 'learning_state';
 
 export interface WordData {
   id: number;
@@ -38,6 +39,12 @@ export interface UserLevel {
     accuracy: number;
   }>;
   timestamp: string;
+}
+
+export interface LearningStateData {
+  version: string;
+  state: unknown; // Will be typed as LearningState when imported
+  savedAt: number;
 }
 
 export class Storage {
@@ -217,5 +224,42 @@ export class Storage {
       console.error('Download failed:', error);
       throw error;
     }
+  }
+
+  // Learning state methods
+  static getLearningState(): unknown | null {
+    const data = this.load<LearningStateData>(learning_state);
+    if (data && data.version === '1.0') {
+      return data.state;
+    }
+    return null;
+  }
+
+  static saveLearningState(state: unknown): boolean {
+    const data: LearningStateData = {
+      version: '1.0',
+      state,
+      savedAt: Date.now()
+    };
+    return this.save(learning_state, data);
+  }
+
+  static exportLearningData(): string {
+    const state = this.getLearningState();
+    const words = this.getWords();
+    return JSON.stringify(
+      {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        learningState: state,
+        wordsData: words
+      },
+      null,
+      2
+    );
+  }
+
+  static clearLearningState(): boolean {
+    return this.remove(learning_state);
   }
 }

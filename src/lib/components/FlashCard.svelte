@@ -3,11 +3,18 @@
   export let word = '';
   export let properties: string[] = [];
   export let translations: string[] = [];
+  export let direction: 'forward' | 'backward' = 'forward';
 
   // Callback props instead of event dispatcher
   export let onSwipeRight = () => {};
   export let onSwipeLeft = () => {};
   export let onSwipeUp = () => {};
+
+  // Determine what to show based on direction
+  $: frontText = direction === 'forward' ? word : translations[0] || '';
+  $: backText = direction === 'forward' ? translations : [word];
+  $: frontLanguage = direction === 'forward' ? 'French' : 'Russian';
+  $: backLanguage = direction === 'forward' ? 'Russian' : 'French';
 
   // State
   let isFlipped = false;
@@ -133,26 +140,35 @@
     class="absolute inset-0 transform rounded-xl transition-all duration-300 backface-hidden"
     class:rotate-y-180={isFlipped}
   >
-    <!-- Front of card (French word) -->
+    <!-- Front of card -->
     <div class="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-6">
-      <h2 class="text-3xl font-bold text-gray-800">{word}</h2>
+      <h2 class="text-3xl font-bold text-gray-800">{frontText}</h2>
       <div class="mt-2 text-sm text-gray-500">
-        {properties.join(', ')}
+        {direction === 'forward' ? properties.join(', ') : 'French word'}
+      </div>
+      <div class="mt-1 text-xs text-blue-500">
+        {frontLanguage}
       </div>
     </div>
   </div>
 
-  <!-- Back of card (Russian translations) -->
+  <!-- Back of card -->
   <div
     class="absolute inset-0 rotate-y-180 transform rounded-xl transition-all duration-300 backface-hidden"
     class:rotate-y-0={isFlipped}
   >
     <div class="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-6">
       <ul class="w-full text-center">
-        {#each translations as translation, i (i)}
-          <li class="py-1 text-2xl text-gray-700">{translation}</li>
+        {#each backText as text, i (i)}
+          <li class="py-1 text-2xl text-gray-700">{text}</li>
         {/each}
       </ul>
+      <div class="mt-2 text-sm text-gray-500">
+        {direction === 'backward' ? properties.join(', ') : ''}
+      </div>
+      <div class="mt-1 text-xs text-blue-500">
+        {backLanguage}
+      </div>
     </div>
   </div>
 
