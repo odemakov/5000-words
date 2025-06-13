@@ -94,7 +94,6 @@
   // Determine if we can switch modes
   $: canSwitchToLearning = stats.forwardCount > 0 || stats.backwardCount > 0;
   $: canSwitchToReviews = stats.dueReviewsCount >= 10;
-  $: hasAnyContent = canSwitchToLearning || canSwitchToReviews;
 </script>
 
 <svelte:head>

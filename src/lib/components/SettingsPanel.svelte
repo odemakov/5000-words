@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { DailyStats } from '../types/learning.js';
   import { LearningController } from '../controllers/LearningController.js';
   import { Storage } from '../storage.js';
@@ -7,8 +6,6 @@
   export let onClose: () => void;
   export let currentLevel: 'A1' | 'A2' | 'B1' | 'B2';
   export let todayStats: DailyStats;
-
-  const dispatch = createEventDispatcher();
 
   let showResetConfirmation = false;
   let showExportSuccess = false;
@@ -22,12 +19,12 @@
 
   // Load saved settings on component mount
   function loadSettings() {
-    const settings = Storage.load('app_settings') as any;
+    const settings = Storage.load('app_settings') as Record<string, unknown>;
     if (settings) {
-      fontSize = settings.fontSize || 'medium';
-      theme = settings.theme || 'light';
+      fontSize = (settings.fontSize as 'small' | 'medium' | 'large') || 'medium';
+      theme = (settings.theme as 'light' | 'dark') || 'light';
       soundEffects = settings.soundEffects !== false;
-      dailyGoal = settings.dailyGoal || 20;
+      dailyGoal = (settings.dailyGoal as number) || 20;
     }
   }
 
@@ -140,7 +137,9 @@
   }
 
   // Save other settings when they change
-  $: soundEffects, dailyGoal, saveSettings();
+  $: if (soundEffects !== undefined && dailyGoal !== undefined) {
+    saveSettings();
+  }
 
   // Load settings when component mounts
   loadSettings();
@@ -200,7 +199,7 @@
       <div class="mb-4">
         <label class="mb-2 block text-sm text-gray-700" for="font-size-group">Font Size</label>
         <div class="flex space-x-2" role="group" aria-labelledby="font-size-group">
-          {#each ['small', 'medium', 'large'] as size}
+          {#each ['small', 'medium', 'large'] as size (size)}
             <button
               class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors"
               class:bg-blue-500={fontSize === size}
@@ -219,7 +218,7 @@
       <div class="mb-4">
         <label class="mb-2 block text-sm text-gray-700" for="theme-group">Theme</label>
         <div class="flex space-x-2" role="group" aria-labelledby="theme-group">
-          {#each [['light', '☀️'], ['dark', '🌙']] as [themeOption, icon]}
+          {#each [['light', '☀️'], ['dark', '🌙']] as [themeOption, icon] (themeOption)}
             <button
               class="flex flex-1 items-center justify-center space-x-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
               class:bg-blue-500={theme === themeOption}
