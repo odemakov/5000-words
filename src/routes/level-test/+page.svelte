@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import FlashCard from '$lib/components/FlashCard.svelte';
   import ProgressBar from '$lib/components/ProgressBar.svelte';
   import Header from '$lib/components/Header.svelte';
@@ -40,8 +41,7 @@
   }
 
   function handleStartLearning() {
-    // Navigate to main learning page, passing the detected level
-    window.location.href = `/learn?level=${detectedLevel}`;
+    goto(`/learning?level=${detectedLevel}`);
   }
 </script>
 

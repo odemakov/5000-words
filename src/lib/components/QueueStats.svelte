@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { learningState } from '$lib/controllers/LearningController';
+  import { LearningController, learningState } from '$lib/controllers/LearningController';
 
   export let dueReviewsCount: number;
   export let totalReviewsCount: number;
@@ -14,36 +14,47 @@
   $: backwardCount = $learningState.backwardQueue.length;
 </script>
 
-<div class="mb-6 rounded-lg bg-white p-4 shadow-sm">
+<div class="mb-6 rounded-lg bg-white p-1 shadow-sm">
   {#if currentMode === 'learning'}
     <div class="flex items-center justify-between">
       <div class="flex space-x-6">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">{forwardCount}</div>
-          <div class="text-xs tracking-wide text-gray-500 uppercase">Forward</div>
-          <div class="text-xs text-gray-400">FR → RU</div>
-        </div>
+        <button
+          class="flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
+          class:bg-blue-500={currentDirection === 'forward'}
+          class:text-white={currentDirection === 'forward'}
+          class:shadow-sm={currentDirection === 'forward'}
+          class:text-gray-600={currentDirection !== 'forward'}
+          class:cursor-not-allowed={currentDirection === 'forward'}
+          class:cursor-pointer={currentDirection === 'backward'}
+          disabled={forwardCount === 0}
+          on:click={() => {
+            LearningController.switchDirection('forward');
+          }}
+        >
+          <div class="text-center">
+            <div class="text-2xl font-bold">{forwardCount}</div>
+            <div class="text-xs">FR → RU</div>
+          </div>
+        </button>
 
-        <div class="text-center">
-          <div class="text-2xl font-bold text-gray-900">{backwardCount}</div>
-          <div class="text-xs tracking-wide text-gray-500 uppercase">Backward</div>
-          <div class="text-xs text-gray-400">RU → FR</div>
-        </div>
-      </div>
-
-      <div class="text-right">
-        <div class="text-xs tracking-wide text-gray-400 uppercase">Current</div>
-        <div class="font-medium text-blue-600">
-          {currentDirection === 'forward' ? 'FR → RU' : 'RU → FR'}
-        </div>
-        <div class="mt-1 h-1 w-16 rounded-full bg-gray-200">
-          <div
-            class="h-1 rounded-full bg-blue-500 transition-all duration-300"
-            style="width: {currentDirection === 'forward'
-              ? (forwardCount / (forwardCount + backwardCount)) * 100
-              : (backwardCount / (forwardCount + backwardCount)) * 100}%"
-          ></div>
-        </div>
+        <button
+          class="flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
+          class:bg-blue-500={currentDirection === 'backward'}
+          class:text-white={currentDirection === 'backward'}
+          class:shadow-sm={currentDirection === 'backward'}
+          class:text-gray-600={currentDirection !== 'backward'}
+          class:cursor-not-allowed={currentDirection === 'backward'}
+          class:cursor-pointer={currentDirection === 'forward'}
+          disabled={backwardCount === 0}
+          on:click={() => {
+            LearningController.switchDirection('backward');
+          }}
+        >
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">{backwardCount}</div>
+            <div class="text-xs text-gray-400">RU → FR</div>
+          </div>
+        </button>
       </div>
     </div>
   {:else}

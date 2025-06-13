@@ -465,6 +465,10 @@ export class LearningController {
     });
   }
 
+  static switchDirection(direction: 'forward' | 'backward') {
+    learningState.update((state) => ({ ...state, currentDirection: direction }));
+  }
+
   static switchMode(mode: 'learning' | 'reviews') {
     learningState.update((state) => ({ ...state, currentMode: mode }));
   }

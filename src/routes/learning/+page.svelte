@@ -33,8 +33,6 @@
       learningState.set(savedState);
       isInitialized = true;
     } else {
-      // If no saved state, we need to redirect to level test or initialize
-      // For now, we'll initialize with A1 level as fallback
       await LearningController.initializeQueueFilling('A1', []);
       isInitialized = true;
     }

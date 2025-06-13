@@ -10,7 +10,7 @@
 
 <div class="mb-6 flex rounded-lg bg-white p-1 shadow-sm">
   <button
-    class="flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
+    class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
     class:bg-blue-500={currentMode === 'learning'}
     class:text-white={currentMode === 'learning'}
     class:shadow-sm={currentMode === 'learning'}
@@ -46,6 +46,7 @@
     class:hover:bg-gray-50={currentMode !== 'reviews' && reviewsAvailable}
     class:opacity-50={!reviewsAvailable}
     class:cursor-not-allowed={!reviewsAvailable}
+    class:cursor-pointer={reviewsAvailable}
     disabled={!reviewsAvailable}
     on:click={() => onModeChange('reviews')}
   >
@@ -70,7 +71,7 @@
   </button>
 
   <button
-    class="flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
+    class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
     class:bg-blue-500={currentMode === 'adding'}
     class:text-white={currentMode === 'adding'}
     class:shadow-sm={currentMode === 'adding'}
