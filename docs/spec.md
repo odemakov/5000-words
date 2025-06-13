@@ -30,41 +30,45 @@
 #### Gestures
 
 - **Tap:** Flip card to show translation
-- **Swipe right:** "I know this word" (remove forever)
-- **Swipe up:** "I learned this word" (add to recap list)
-- **Swipe left:** "Don't know" (reinsert at random position 5-30)
+- **Swipe right:** "I know this word" (move to recap7)
+- **Swipe left:** "Don't know" (reinsert at random position 10-30)
 
 #### Queue Replacement (when card removed)
 
-- **60%:** Next words in frequency order
-- **20%:** Previous words (prioritize least-seen)
-- **20%:** Recap words (2+ weeks old)
+- **80%:** Next words in frequency order
+- **20%:** Ready recap words (past their review date)
+- **End of vocabulary:** 100% recap words only, force reviews mode if none available
 
 ### Russian → French (Reverse)
 
-- **Activate requirement:** 100+ words marked as "known" in primary mode
+- **Activate requirement:** Words marked as "known" in primary mode
 - **Queue source:** Words marked as "known" in primary mode
 - **Same 30-card queue and gesture system**
 - **Same replacement logic** (sourced from known words pool)
 
 ## Progress Tracking
 
-- **Progress calculation:** Average of last 50 "known" words (swipe right only)
+- **Progress calculation:** Highest word index in respective currentQueue
 - **Display:** Tiny progress bar showing current level progress (e.g., "B1: 162/2000")
-- **Hide progress** if user has <50 "known" words
-- **Separate progress** for each direction
+- **Separate progress** for each direction (forward/reverse)
 
 ## Recap System
 
-- Words marked "learned" (swipe up) enter recap cycle
+- Words marked "known" (swipe right) enter recap cycle
 - During recap:
-  - Swipe right → Remove forever (graduated)
-  - Swipe up → Stay in recap (longer interval)
-  - Swipe left → Return to active learning
+  - Swipe right → Move to next stage (recap7→recap14→recap30→fully learned)
+  - Swipe left → Return to currentQueue
 
 ## UI Elements
 
-- **Mode switch:** Disabled Russian→French button until 100 words known
-- **Tooltip:** "Reverse mode unlocks at 100 known words (currently: 73)"
+- **Mode switch:** Three modes available (Forward, Reverse, Reviews)
 - **Progress bar:** Bottom of main interface showing current level progress
 - **Level celebrations:** Popup when completing a level (A1→A2, etc.)
+- **State persistence:** All changes saved immediately after each swipe
+
+## Technical Notes
+
+- All state management via localStorage
+- No backend synchronization
+- Automatic state persistence after every user action
+- Separate progress tracking for forward and reverse directions
