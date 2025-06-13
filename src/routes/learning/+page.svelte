@@ -21,7 +21,8 @@
 
   let showSettings = false;
   let isInitialized = false;
-  let currentMode: 'learning' | 'reviews' | 'adding' = 'learning';
+  let currentMode: 'learning-forward' | 'learning-backward' | 'reviews' | 'adding' =
+    'learning-forward';
   let addingWord: { word: string; props: string[]; translations: string[]; index: number } | null =
     null;
   let addingStats = { learnedCount: 0, canSwitchToLearning: false };
@@ -47,12 +48,15 @@
     await LearningController.processCardResponse(false);
   }
 
-  function handleModeSwitch(mode: 'learning' | 'reviews' | 'adding') {
+  function handleModeSwitch(mode: 'learning-forward' | 'learning-backward' | 'reviews' | 'adding') {
     // Check if mode switch is allowed
     if (mode === 'reviews' && !LearningController.canSwitchToReviews()) {
       return; // Mode selector should handle disabled state
     }
-    if (mode === 'learning' && !LearningController.canSwitchToLearning()) {
+    if (mode === 'learning-forward' && !LearningController.canSwitchToLearning()) {
+      return; // Mode selector should handle disabled state
+    }
+    if (mode === 'learning-backward' && !LearningController.canSwitchToLearning()) {
       return; // Mode selector should handle disabled state
     }
 
@@ -131,8 +135,8 @@
 
   function handleSwitchToLearning() {
     if (addingStats.canSwitchToLearning) {
-      currentMode = 'learning';
-      LearningController.switchMode('learning');
+      currentMode = 'learning-forward';
+      LearningController.switchMode('learning-forward');
     }
   }
 
@@ -229,8 +233,8 @@
               </p>
               <button
                 on:click={() => {
-                  currentMode = 'learning';
-                  LearningController.switchMode('learning');
+                  currentMode = 'learning-forward';
+                  LearningController.switchMode('learning-forward');
                 }}
                 class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
               >
@@ -244,7 +248,6 @@
           dueReviewsCount={stats.dueReviewsCount}
           totalReviewsCount={stats.totalReviewsCount}
           currentMode={state.currentMode}
-          currentDirection={state.currentDirection}
           recap7Count={stats.recap7Count}
           recap14Count={stats.recap14Count}
           recap30Count={stats.recap30Count}
@@ -293,9 +296,9 @@
               </div>
             </div>
 
-            {#if state.currentMode === 'learning'}
+            {#if state.currentMode === 'learning-forward' || state.currentMode === 'learning-backward'}
               <p class="mt-3 text-xs text-blue-600">
-                Direction: {state.currentDirection === 'forward'
+                Mode: {state.currentMode === 'learning-forward'
                   ? 'French → Russian'
                   : 'Russian → French'}
               </p>

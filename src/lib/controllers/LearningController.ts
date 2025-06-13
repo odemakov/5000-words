@@ -21,9 +21,7 @@ const createDefaultState = (): LearningState => ({
   recap14: [],
   recap30: [],
   learnedList: [],
-  currentMode: 'learning',
-  currentDirection: 'forward',
-  backwardQueueLength: 30,
+  currentMode: 'learning-forward',
   lastActivity: Date.now(),
   sessionStartTime: Date.now(),
   todayStats: {
@@ -59,9 +57,9 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
   ($state) => {
     const { currentMode, forwardQueue, backwardQueue, recap7, recap14, recap30 } = $state;
 
-    if (currentMode === 'learning') {
-      // Try forward queue first
-      if (forwardQueue.length > 0) {
+    if (currentMode === 'learning-forward' || currentMode === 'learning-backward') {
+      // Check forward direction first
+      if ($state.currentMode === 'learning-forward' && forwardQueue.length > 0) {
         const queueItem = forwardQueue[0];
         const wordData = getWordByIndex(queueItem.wordIndex);
         if (wordData) {
@@ -74,10 +72,7 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             attempts: queueItem.attempts
           };
         }
-      }
-
-      // Try backward queue
-      if (backwardQueue.length > 0) {
+      } else if ($state.currentMode === 'learning-backward' && backwardQueue.length > 0) {
         const queueItem = backwardQueue[0];
         const wordData = getWordByIndex(queueItem.wordIndex);
         if (wordData) {
@@ -204,12 +199,10 @@ export class LearningController {
 
     const now = Date.now();
 
-    if (state.currentMode === 'learning') {
-      if (state.currentDirection === 'forward') {
-        this.processForwardQueueResponse(card, known);
-      } else {
-        this.processBackwardQueueResponse(card, known);
-      }
+    if (state.currentMode === 'learning-forward') {
+      this.processForwardQueueResponse(card, known);
+    } else if (state.currentMode === 'learning-backward') {
+      this.processBackwardQueueResponse(card, known);
     } else {
       this.processReviewResponse(card, known);
     }
@@ -224,8 +217,8 @@ export class LearningController {
       }
     }));
 
-    // Auto-switch direction if needed
-    this.updateCurrentDirection();
+    // Auto-switch mode if needed
+    this.updateCurrentMode();
 
     this.saveState();
   }
@@ -256,20 +249,24 @@ export class LearningController {
       } else {
         // Reinsert randomly into second half of the queue
         const queueLength = newForwardQueue.length;
-        const halfLength = Math.floor(queueLength / 2);
-        // Insert position: from half length to end of queue
-        const insertPos = halfLength + Math.floor(Math.random() * (queueLength - halfLength + 1));
-
         const updatedItem: WordInQueue = {
           wordIndex: card.wordIndex,
           addedAt: now,
           attempts: (card.attempts || 0) + 1
         };
 
+        let insertPosition: number;
+        if (queueLength < 4) {
+          insertPosition = queueLength;
+        } else {
+          const halfLength = Math.floor(queueLength / 2);
+          insertPosition = halfLength + Math.floor(Math.random() * (queueLength - halfLength + 1));
+        }
+
         const newQueue = [
-          ...newForwardQueue.slice(0, insertPos),
+          ...newForwardQueue.slice(0, insertPosition),
           updatedItem,
-          ...newForwardQueue.slice(insertPos)
+          ...newForwardQueue.slice(insertPosition)
         ];
 
         return {
@@ -310,19 +307,26 @@ export class LearningController {
           }
         };
       } else {
-        // Reinsert randomly into second half of thepositions 10-30 of backward queue
-        const insertPos = Math.min(Math.floor(Math.random() * 20) + 10, newBackwardQueue.length);
-
+        // Reinsert randomly into second half of the queue
+        const queueLength = newBackwardQueue.length;
         const updatedItem: WordInQueue = {
           wordIndex: card.wordIndex,
           addedAt: state.backwardQueue.find((w) => w.wordIndex === card.wordIndex)?.addedAt || now,
           attempts: (card.attempts || 0) + 1
         };
 
+        let insertPosition: number;
+        if (queueLength < 4) {
+          insertPosition = queueLength;
+        } else {
+          const halfLength = Math.floor(queueLength / 2);
+          insertPosition = halfLength + Math.floor(Math.random() * (queueLength - halfLength + 1));
+        }
+
         const newQueue = [
-          ...newBackwardQueue.slice(0, insertPos),
+          ...newBackwardQueue.slice(0, insertPosition),
           updatedItem,
-          ...newBackwardQueue.slice(insertPos)
+          ...newBackwardQueue.slice(insertPosition)
         ];
 
         return {
@@ -443,34 +447,38 @@ export class LearningController {
     });
   }
 
-  static updateCurrentDirection() {
+  static updateCurrentMode() {
     learningState.update((state) => {
       // Auto-switch to the queue that has cards available
-      if (state.currentMode === 'learning') {
+      if (state.currentMode === 'learning-forward' || state.currentMode === 'learning-backward') {
         if (
-          state.currentDirection === 'forward' &&
+          state.currentMode === 'learning-forward' &&
           state.forwardQueue.length === 0 &&
           state.backwardQueue.length > 0
         ) {
-          return { ...state, currentDirection: 'backward' };
+          return { ...state, currentMode: 'learning-backward' };
         } else if (
-          state.currentDirection === 'backward' &&
+          state.currentMode === 'learning-backward' &&
           state.backwardQueue.length === 0 &&
           state.forwardQueue.length > 0
         ) {
-          return { ...state, currentDirection: 'forward' };
+          return { ...state, currentMode: 'learning-forward' };
         }
       }
       return state;
     });
   }
 
-  static switchDirection(direction: 'forward' | 'backward') {
-    learningState.update((state) => ({ ...state, currentDirection: direction }));
+  static switchMode(mode: 'learning-forward' | 'learning-backward' | 'reviews') {
+    learningState.update((state) => ({ ...state, currentMode: mode }));
   }
 
-  static switchMode(mode: 'learning' | 'reviews') {
-    learningState.update((state) => ({ ...state, currentMode: mode }));
+  static switchDirection(direction: 'forward' | 'backward') {
+    learningState.update((state) => ({
+      ...state,
+      currentDirection: direction
+    }));
+    this.saveState();
   }
 
   static canSwitchToReviews(): boolean {
@@ -526,7 +534,7 @@ export class LearningController {
       progress: startingIndex,
       sessionStartTime: now,
       lastActivity: now,
-      currentMode: 'learning' // Will be used for queue filling initially
+      currentMode: 'learning-forward' // Will be used for queue filling initially
     };
 
     learningState.set(initialState);

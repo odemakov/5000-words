@@ -113,7 +113,7 @@ interface LearningState {
   recap14: RecapWord[];       // 14-day reviews
   recap30: RecapWord[];       // 30-day reviews
   learnedList: number[];      // Fully mastered word indices
-  currentMode: 'learning' | 'reviews';
+  currentMode: 'learning-forward' | 'learning-backward' | 'reviews';
   todayStats: DailyStats;     // Session analytics
 }
 ```

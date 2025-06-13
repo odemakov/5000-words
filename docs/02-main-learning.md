@@ -30,14 +30,18 @@ Primary learning screen with spaced repetition system using multiple queues. Use
 **forwardQueue (10 words min):**
 - Intensive learning phase for French → Russian direction
 - **Known Response**: Move word to backwardQueue for reverse learning
-- **Unknown Response**: Shuffle word back to second half of queue (e.g., if queue has 10 words, positions 5-10)
+- **Unknown Response**: 
+  - If queue has < 4 cards: Place at end of queue
+  - If queue has ≥ 4 cards: Shuffle to random position in second half
 - **No Auto-Fill**: Queue will not automatically add new words when it gets low
 - **Manual Expansion**: User must switch to "Add Words" mode to expand queue
 
 **backwardQueue (user-defined length, default 30):**
 - Reverse learning phase for Russian → French direction
 - **Known Response**: Graduate word to recap7 (7-day review cycle)
-- **Unknown Response**: Shuffle word back to second half of queue
+- **Unknown Response**: 
+  - If queue has < 4 cards: Place at end of queue
+  - If queue has ≥ 4 cards: Shuffle to random position in second half
 - **Size Control**: Users can adjust backwardQueue length in settings (10-100 words)
 
 **Queue Management:**
@@ -56,6 +60,8 @@ Primary learning screen with spaced repetition system using multiple queues. Use
 ### Mode Switching
 - **Complete User Control**: Switch between modes anytime without restrictions
 - **Learning Mode**: Available when forwardQueue OR backwardQueue has words
+  - **Direction Switching**: Click on forward/backward queue buttons to switch learning direction
+  - **Automatic Fallback**: If current direction queue is empty, shows cards from other direction
 - **Reviews Mode**: Available when recap queues have 10+ due words
 - **Add Words Mode**: Always available to expand forwardQueue
 - **Visual Indicators**: Mode selector shows current queue sizes and due review counts
@@ -87,6 +93,10 @@ Primary learning screen with spaced repetition system using multiple queues. Use
 
 - **New Components**: QueueFilling.svelte for initial word population
 - **Enhanced ModeSelector**: Added "Add Words" mode with queue count indicators
-- **Extended LearningController**: Methods for queue filling, word management, and settings
+- **Enhanced QueueStats**: Direction switching buttons for forward/backward learning
+- **Extended LearningController**: 
+  - Queue filling and word management methods
+  - `switchDirection()` method for changing learning direction
+  - Smart card placement logic based on queue size
 - **Route Integration**: /queue-filling page for initial setup and re-entry
 - **Settings Integration**: Backward queue length configuration in settings panel

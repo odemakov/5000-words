@@ -56,7 +56,7 @@
   }
 
   function handleSwitchToLearning() {
-    if ($learningState.forwardQueue.length >= 10) {
+    if (stats.canSwitchToLearning) {
       goto('/learning');
     }
   }
@@ -94,8 +94,9 @@
     properties={currentWord.props}
     translations={currentWord.translations}
     currentIndex={currentWord.index}
+    totalWords={5000}
     learnedCount={stats.learnedCount}
-    canSwitchToLearning={$learningState.forwardQueue.length >= 10}
+    canSwitchToLearning={stats.canSwitchToLearning}
     {level}
     on:addToQueue={handleAddToQueue}
     on:addToLearned={handleAddToLearned}
@@ -123,7 +124,7 @@
       <h1 class="mb-2 text-2xl font-bold text-gray-900">All Words Reviewed!</h1>
       <p class="mb-6 text-gray-600">
         You've gone through all available words for your level.
-        {#if $learningState.forwardQueue.length >= 10}
+        {#if stats.canSwitchToLearning}
           You can start learning with your queue of {$learningState.forwardQueue.length} words.
         {:else}
           You have {$learningState.forwardQueue.length} words in your queue and {stats.learnedCount}
@@ -132,7 +133,7 @@
       </p>
 
       <div class="space-y-3">
-        {#if $learningState.forwardQueue.length >= 10}
+        {#if stats.canSwitchToLearning}
           <button
             on:click={handleSwitchToLearning}
             class="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"

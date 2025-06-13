@@ -3,8 +3,7 @@
 
   export let dueReviewsCount: number;
   export let totalReviewsCount: number;
-  export let currentMode: 'learning' | 'reviews';
-  export let currentDirection: 'forward' | 'backward';
+  export let currentMode: 'learning-forward' | 'learning-backward' | 'reviews';
   export let recap7Count: number = 0;
   export let recap14Count: number = 0;
   export let recap30Count: number = 0;
@@ -15,20 +14,23 @@
 </script>
 
 <div class="mb-6 rounded-lg bg-white p-1 shadow-sm">
-  {#if currentMode === 'learning'}
+  {#if currentMode === 'learning-forward' || currentMode === 'learning-backward'}
     <div class="flex items-center justify-between">
       <div class="flex space-x-6">
         <button
-          class="flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-          class:bg-blue-500={currentDirection === 'forward'}
-          class:text-white={currentDirection === 'forward'}
-          class:shadow-sm={currentDirection === 'forward'}
-          class:text-gray-600={currentDirection !== 'forward'}
-          class:cursor-not-allowed={currentDirection === 'forward'}
-          class:cursor-pointer={currentDirection === 'backward'}
+          class="flex-1 rounded-md px-4 py-1 text-sm font-medium transition-all duration-200"
+          class:bg-blue-500={currentMode === 'learning-forward'}
+          class:text-white={currentMode === 'learning-forward'}
+          class:shadow-sm={currentMode === 'learning-forward'}
+          class:text-gray-600={currentMode !== 'learning-forward'}
+          class:hover:bg-gray-50={currentMode !== 'learning-forward' && forwardCount > 0}
+          class:opacity-50={forwardCount === 0}
+          class:cursor-not-allowed={forwardCount === 0}
           disabled={forwardCount === 0}
           on:click={() => {
-            LearningController.switchDirection('forward');
+            if (currentMode !== 'learning-forward' && forwardCount > 0) {
+              LearningController.switchDirection('forward');
+            }
           }}
         >
           <div class="text-center">
@@ -39,20 +41,23 @@
 
         <button
           class="flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-          class:bg-blue-500={currentDirection === 'backward'}
-          class:text-white={currentDirection === 'backward'}
-          class:shadow-sm={currentDirection === 'backward'}
-          class:text-gray-600={currentDirection !== 'backward'}
-          class:cursor-not-allowed={currentDirection === 'backward'}
-          class:cursor-pointer={currentDirection === 'forward'}
+          class:bg-blue-500={currentMode === 'learning-backward'}
+          class:text-white={currentMode === 'learning-backward'}
+          class:shadow-sm={currentMode === 'learning-backward'}
+          class:text-gray-600={currentMode !== 'learning-backward'}
+          class:hover:bg-gray-50={currentMode !== 'learning-backward' && backwardCount > 0}
+          class:opacity-50={backwardCount === 0}
+          class:cursor-not-allowed={backwardCount === 0}
           disabled={backwardCount === 0}
           on:click={() => {
-            LearningController.switchDirection('backward');
+            if (currentMode !== 'learning-backward' && backwardCount > 0) {
+              LearningController.switchMode('learning-backward');
+            }
           }}
         >
           <div class="text-center">
-            <div class="text-2xl font-bold text-gray-900">{backwardCount}</div>
-            <div class="text-xs text-gray-400">RU → FR</div>
+            <div class="text-2xl font-bold">{backwardCount}</div>
+            <div class="text-xs">RU → FR</div>
           </div>
         </button>
       </div>
@@ -81,7 +86,7 @@
     </div>
   {/if}
 
-  {#if currentMode === 'learning' && dueReviewsCount > 0}
+  {#if (currentMode === 'learning-forward' || currentMode === 'learning-backward') && dueReviewsCount > 0}
     <div class="mt-3 flex items-center justify-center rounded-md bg-red-50 py-2">
       <svg class="mr-2 h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path

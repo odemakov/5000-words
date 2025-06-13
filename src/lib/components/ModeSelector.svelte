@@ -1,6 +1,8 @@
 <script lang="ts">
-  export let currentMode: 'learning' | 'reviews' | 'adding';
-  export let onModeChange: (mode: 'learning' | 'reviews' | 'adding') => void;
+  export let currentMode: 'learning-forward' | 'learning-backward' | 'reviews' | 'adding';
+  export let onModeChange: (
+    mode: 'learning-forward' | 'learning-backward' | 'reviews' | 'adding'
+  ) => void;
   export let learningAvailable: boolean;
   export let reviewsAvailable: boolean;
   export let addingAvailable: boolean = true;
@@ -11,15 +13,15 @@
 <div class="mb-6 flex rounded-lg bg-white p-1 shadow-sm">
   <button
     class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-    class:bg-blue-500={currentMode === 'learning'}
-    class:text-white={currentMode === 'learning'}
-    class:shadow-sm={currentMode === 'learning'}
-    class:text-gray-600={currentMode !== 'learning'}
-    class:hover:bg-gray-50={currentMode !== 'learning' && learningAvailable}
+    class:bg-blue-500={currentMode === 'learning-forward'}
+    class:text-white={currentMode === 'learning-forward'}
+    class:shadow-sm={currentMode === 'learning-forward'}
+    class:text-gray-600={currentMode !== 'learning-forward'}
+    class:hover:bg-gray-50={currentMode !== 'learning-forward' && learningAvailable}
     class:opacity-50={!learningAvailable}
     class:cursor-not-allowed={!learningAvailable}
     disabled={!learningAvailable}
-    on:click={() => onModeChange('learning')}
+    on:click={() => onModeChange('learning-forward')}
   >
     <div class="flex items-center justify-center space-x-2">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,7 +40,7 @@
   </button>
 
   <button
-    class="relative flex-1 rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
+    class="relative flex-1 rounded-md p-1 text-sm font-medium transition-all duration-200"
     class:bg-blue-500={currentMode === 'reviews'}
     class:text-white={currentMode === 'reviews'}
     class:shadow-sm={currentMode === 'reviews'}
@@ -102,7 +104,7 @@
       No cards available for study. Add more words to your queue! 📚
     </p>
   </div>
-{:else if currentMode === 'learning' && !learningAvailable}
+{:else if (currentMode === 'learning-forward' || currentMode === 'learning-backward') && !learningAvailable}
   <div class="mb-4 rounded-lg bg-blue-50 p-4 text-center">
     <p class="text-sm text-blue-800">
       All learning queues are empty. Add more words or switch to Reviews to continue studying.

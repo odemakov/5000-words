@@ -25,7 +25,6 @@ export interface AppSettings {
   theme: 'light' | 'dark';
   soundEffects: boolean;
   dailyGoal: number;
-  backwardQueueLength: number;
 }
 
 export interface UserProgress {

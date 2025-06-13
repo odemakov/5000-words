@@ -22,11 +22,7 @@ export interface LearningState {
   learnedList: number[]; // Word indices that are fully learned
 
   // Current app state
-  currentMode: 'learning' | 'reviews';
-  currentDirection: 'forward' | 'backward';
-
-  // User settings
-  backwardQueueLength: number; // User-defined size for backward queue
+  currentMode: 'learning-forward' | 'learning-backward' | 'reviews';
 
   // Session tracking
   lastActivity: number;
@@ -86,7 +82,6 @@ export interface AppSettings {
   soundEffects: boolean;
   autoAdvance: boolean;
   dailyGoal: number;
-  backwardQueueLength: number;
 }
 
 // Session data for analytics
