@@ -1,7 +1,7 @@
 const CACHE_NAME = '5000-words-v1';
 const WORDS_VERSION = 'words-version.json';
 const WORDS = 'words.json';
-const urlsToCache = [];
+const urlsToCache = ['/', '/manifest.json', '/favicon.png', '/words.json', '/words-version.json'];
 
 // Install event - cache app shell
 self.addEventListener('install', (event) => {
@@ -11,6 +11,8 @@ self.addEventListener('install', (event) => {
       return cache.addAll(urlsToCache);
     })
   );
+  // Force waiting service worker to become active
+  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
@@ -19,7 +21,11 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (
+            cacheName !== CACHE_NAME &&
+            cacheName !== 'words-cache-v1' &&
+            cacheName !== 'version-cache-v1'
+          ) {
             console.log('Service Worker: Deleting old cache', cacheName);
             return caches.delete(cacheName);
           }
@@ -27,6 +33,8 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Take control of all pages immediately
+  self.clients.claim();
 });
 
 // Fetch event - custom caching strategies
@@ -97,8 +105,8 @@ async function defaultCacheStrategy(request) {
     // Try network first
     const networkResponse = await fetch(request);
 
-    // Cache successful responses
-    if (networkResponse.ok) {
+    // Cache successful responses for GET requests
+    if (networkResponse.ok && request.method === 'GET') {
       cache.put(request, networkResponse.clone());
     }
 
@@ -113,6 +121,11 @@ async function defaultCacheStrategy(request) {
 
     // If it's a navigation request, return the cached index.html
     if (request.mode === 'navigate') {
+      return cache.match('/');
+    }
+
+    // Return offline page for HTML requests
+    if (request.headers.get('accept').includes('text/html')) {
       return cache.match('/');
     }
 
