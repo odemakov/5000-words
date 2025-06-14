@@ -5,12 +5,10 @@
   export let word: string = '';
   export let properties: string[] = [];
   export let translations: string[] = [];
-  export let currentIndex: number = 0;
   export const totalWords: number = 0;
   import { learningState } from '$lib/controllers/LearningController';
   export let learnedCount: number = 0;
   export let canSwitchToLearning: boolean = false;
-  export let level: string = '';
 
   type Events = {
     addToQueue: void;

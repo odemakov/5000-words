@@ -1,8 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-  import { LEVEL_A1 } from '$lib/constants/modes';
   import QueueFilling from '$lib/components/QueueFilling.svelte';
   import { LearningController, learningState } from '$lib/controllers/LearningController';
 
@@ -10,9 +8,6 @@
     null;
   let stats = { learnedCount: 0, canSwitchToLearning: false };
   let isInitialized = false;
-
-  // Get level from URL params
-  $: level = $page.url.searchParams.get('level') || LEVEL_A1;
 
   onMount(async () => {
     // Check if we have a valid learning state
@@ -94,11 +89,9 @@
     word={currentWord.word}
     properties={currentWord.props}
     translations={currentWord.translations}
-    currentIndex={currentWord.index}
     totalWords={5000}
     learnedCount={stats.learnedCount}
     canSwitchToLearning={stats.canSwitchToLearning}
-    {level}
     on:addToQueue={handleAddToQueue}
     on:addToLearned={handleAddToLearned}
     on:switchToLearning={handleSwitchToLearning}
