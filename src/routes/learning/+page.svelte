@@ -206,7 +206,6 @@
         {currentMode}
         onModeChange={handleModeSwitch}
         learningAvailable={canSwitchToLearning}
-        addingAvailable={true}
       />
 
       {#if currentMode === ADDING}

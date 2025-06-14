@@ -22,7 +22,6 @@
   export let currentMode: LearningMode;
   export let onModeChange: (mode: LearningMode) => void;
   export let learningAvailable: boolean;
-  export let addingAvailable: boolean = true;
   export let dueReviewsCount: number = 0;
 
   // Calculate recap stats
@@ -61,7 +60,7 @@
   }
 
   function isModeAvailable(mode: LearningMode): boolean {
-    if (isAddingMode(mode)) return addingAvailable;
+    if (isAddingMode(mode)) return true;
     const stats = getModeStats(mode);
     return stats.available > 0;
   }
@@ -236,10 +235,7 @@
       class:text-white={currentMode === ADDING}
       class:shadow-sm={currentMode === ADDING}
       class:text-gray-600={currentMode !== ADDING}
-      class:hover:bg-gray-50={currentMode !== ADDING && addingAvailable}
-      class:opacity-50={!addingAvailable}
-      class:cursor-not-allowed={!addingAvailable}
-      disabled={!addingAvailable}
+      class:hover:bg-gray-50={currentMode !== ADDING}
       on:click={() => handleModeClick(ADDING)}
     >
       <div class="flex items-center justify-center space-x-2">
