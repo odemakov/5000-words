@@ -353,7 +353,7 @@
     <div class="border-t border-gray-200 pt-4">
       <div class="text-center text-xs text-gray-500">
         <p>5000 Words v1.0</p>
-        <p class="mt-1">Level: {currentLevel} • Made with ❤️ for language learners</p>
+        <p class="mt-1">Level: {currentLevel}</p>
       </div>
     </div>
 

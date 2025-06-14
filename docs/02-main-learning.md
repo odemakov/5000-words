@@ -2,101 +2,113 @@
 
 ## Purpose
 
-Primary learning screen with spaced repetition system using multiple queues. Users can control their learning experience by populating their own forwardQueue, then progressing through the full learning pipeline: forwardQueue → backwardQueue → spaced repetition reviews.
+Primary learning screen implementing receptive and productive language learning with user-controlled queue management and spaced repetition. Users build their own vocabulary pipeline through manual word selection, then progress through: receptive learning → productive learning → spaced repetition mastery.
 
 ## Learning Flow
 
-### Initial Queue Filling
-- **Entry Point**: After completing the level test, users are directed to `/queue-filling?level=X`
-- **Word Presentation**: Words are shown starting from the detected level's index (A1: 0, A2: 800, B1: 2000, B2: 4000)
-- **User Actions per Word**:
-  - Swipe left: "I don't know this word" → add to forwardQueue
-  - Swipe right: "I know this word" → add to learned list
-  - Skip: Move to next word without adding anywhere
-- **Progress Tracking**: Live counter shows forwardQueue size and learned count
-- **Minimum Threshold**: After forwardQueue reaches 10 cards, "Start Learning" button appears
-- **User Control**: Can continue adding more words or begin learning at any time
-- **Re-entry**: Users can return to queue filling anytime via "Add Words" mode in main interface
+### Initial Queue Building (Add Words Mode)
+- **Entry Point**: After level detection, users access add words interface
+- **Word Presentation**: Sequential presentation starting from detected level index
+  - A1: words 0-799, A2: words 800-1999, B1: words 2000-3999, B2: words 4000-4999
+- **User Decision per Word**:
+  - **Swipe left**: "I don't know" → Add to forwardQueue for receptive learning
+  - **Swipe right**: "I already know" → Add directly to learnedList
+- **Continuous Access**: Users can return to Add Words mode anytime to expand vocabulary. User controls forwardQueue size by himself.
 
-### Learning Modes
+### Primary Learning Modes
 
-**Three main modes available:**
-- **Learning** - Work on forwardQueue and backwardQueue
-- **Reviews** - Work on spaced repetition queues (recap7, recap14, recap30)
-- **Add Words** - Return to queue filling interface to expand forwardQueue
+#### Receptive Learning (French → Russian)
+- **Purpose**: Comprehension and recognition of French vocabulary
+- **Queue**: forwardQueue, user-populated
+- **Card Format**: French word → Russian translation(s)
+- **Learning Actions**:
+  - **Known (swipe right)**: Move to backwardQueue for productive learning
+  - **Learning (swipe left)**: Reinsert into second half of current queue
+- **No Auto-Population**: Queue expansion requires manual action via Add Words mode
 
-### Queue System
+#### Productive Learning (Russian → French)
+- **Purpose**: Active recall and production of French vocabulary
+- **Queue**: backwardQueue
+- **Card Format**: Russian word(s) → French production
+- **Learning Actions**:
+  - **Known (swipe right)**: Graduate to recap7 spaced repetition cycle
+  - **Learning (swipe left)**: Reinsert into second half of current queue
+- **Queue Source**: Words marked as "known" during receptive learning
 
-**forwardQueue (10 words min):**
-- Intensive learning phase for French → Russian direction
-- **Known Response**: Move word to backwardQueue for reverse learning
-- **Unknown Response**: 
-  - If queue has < 4 cards: Place at end of queue
-  - If queue has ≥ 4 cards: Shuffle to random position in second half
-- **No Auto-Fill**: Queue will not automatically add new words when it gets low
-- **Manual Expansion**: User must switch to "Add Words" mode to expand queue
+### Spaced Repetition Reviews
+- **recap7**: 7-day review cycle for recently mastered words
+- **recap14**: 14-day review cycle for reinforced vocabulary
+- **recap30**: 30-day review cycle for strong retention
+- **Review Actions**:
+  - **Known (swipe right)**: Advance to next spaced interval or mark as fully learned
+  - **Learning (swipe left)**: Demote back to appropriate learning queue
+- **Smart Scheduling**: Reviews appear based on due dates, prioritizing overdue words
 
-**backwardQueue (user-defined length, default 30):**
-- Reverse learning phase for Russian → French direction
-- **Known Response**: Graduate word to recap7 (7-day review cycle)
-- **Unknown Response**: 
-  - If queue has < 4 cards: Place at end of queue
-  - If queue has ≥ 4 cards: Shuffle to random position in second half
-- **Size Control**: Users can adjust backwardQueue length in settings (10-100 words)
+### Mode Control System
 
-**Queue Management:**
-- **No Automatic Refill**: Queues do not automatically add words
-- **User-Controlled**: Users must actively choose to add words via "Add Words" mode
-- **Queue Minimum**: Learning mode requires at least 10 words in forwardQueue
-- **Shuffle Logic**: Unknown words shuffle to random position in second half of queue
+#### Three-Mode Architecture
+1. **Learning Mode**
+   - **Receptive Focus**: Work primarily on forwardQueue (French → Russian)
+   - **Productive Focus**: Work primarily on backwardQueue (Russian → French)
 
-**Recap Queues (spaced repetition):**
-- **recap7** - Review after 7 days
-- **recap14** - Review after 14 days
-- **recap30** - Review after 30 days
-- Swipe right: Move to next stage (recap7→recap14→recap30→learnedList)
-- Swipe left: Demote back to forwardQueue
+2. **Reviews Mode**
+   - **Unified Review Interface**: Handle all spaced repetition queues
+   - **Priority Scheduling**: Oldest overdue words first, regardless of interval
 
-### Mode Switching
-- **Complete User Control**: Switch between modes anytime without restrictions
-- **Learning Mode**: Available when forwardQueue OR backwardQueue has words
-  - **Direction Switching**: Click on forward/backward queue buttons to switch learning direction
-  - **Automatic Fallback**: If current direction queue is empty, shows cards from other direction
-- **Reviews Mode**: Available when recap queues have 10+ due words
-- **Add Words Mode**: Always available to expand forwardQueue
-- **Visual Indicators**: Mode selector shows current queue sizes and due review counts
-- **Smart Defaults**: System suggests optimal mode but never forces transitions
+3. **Add Words Mode**
+   - **Vocabulary Expansion**: Access queue filling interface to grow forwardQueue
+   - **Unlimited Access**: Available anytime without restrictions
+   - **Progress Continuation**: Resume from last position or explore new ranges
 
-### Progress Tracking
-- **Forward Progress**: Highest word index in forwardQueue
-- **Reverse Progress**: Highest word index in backwardQueue
-- **New Words Learned**: Count of learnedList + count of recap30
-- **Words Reviewed**: All successful recap queue progressions
-- Display: "New: 156 words | Reviewed: 342 words"
-- **Live Queue Counts**: UI continuously displays word counts for all queues
-- **Queue Stats Component**: Shows forwardQueue, backwardQueue, and all recap queue sizes
-- **Progress Indicators**: Visual progress bars and counters throughout the interface
-- **Settings Integration**: Backward queue length is user-configurable via settings panel
+### Smart Queue Management
+
+#### Queue Behavior Logic
+- **Small Queue Shuffling** (< 4 cards): Unknown words placed at end
+- **Large Queue Shuffling** (≥ 4 cards): Unknown words randomly placed in second half
+- **No Automatic Refill**: All queues require manual population by user
+- **User-Controlled Growth**: Vocabulary expansion only through deliberate Add Words sessions
+
+#### Configurable Settings
+- **Progress Tracking**: Separate counters for receptive vs productive learning
+
+### Progress Tracking & Statistics
+
+#### Learning Metrics
+- **Receptive Progress**: Highest word index successfully processed in forwardQueue
+- **Productive Progress**: Highest word index successfully processed in backwardQueue
+- **New Words Learned**: Total count progressing from forwardQueue → backwardQueue → recap7
+- **Words Reviewed**: Successful progressions through spaced repetition cycles
+- **Queue Statistics**: Live counters for all active queues and due reviews
+
+#### Visual Indicators
+- **Queue Status Display**: Real-time word counts for forwardQueue, backwardQueue, and all recap queues
+- **Due Review Counters**: Number of words ready for review in each spaced repetition interval
+- **Session Statistics**: New words added, reviews completed, time spent learning
 
 ## Key Features
 
-- **User-Controlled Queue Building**: Complete control over which words enter the learning pipeline
-- **Flexible Learning Modes**: Seamless switching between Learning, Reviews, and Add Words modes
-- **Configurable Queue Sizes**: User-defined backward queue length (10-100 words)
-- **Comprehensive Progress Tracking**: Live counters for all queues and learning statistics
-- **Intelligent Word Progression**: forwardQueue → backwardQueue → recap7 → recap14 → recap30 → learned
-- **No Forced Progression**: Users control their own pace and can expand queues anytime
-- **Persistent State Management**: All actions automatically saved with seamless resume capability
-- **Visual Feedback**: Progress bars, queue counters, and mode indicators throughout the interface
+### User Autonomy & Control
+- **Self-Directed Learning**: Complete control over vocabulary selection and pacing
+- **Flexible Mode Switching**: Change between Learning, Reviews, and Add Words without restrictions
+- **Manual Queue Building**: No forced vocabulary additions or automatic progressions
+- **Configurable Experience**: Adjust queue sizes and learning preferences in settings
 
-## Technical Implementation
+### Comprehensive Learning Pipeline
+- **Receptive → Productive → Spaced Repetition**: Complete mastery pathway for each word
+- **Bidirectional Learning**: Separate progress tracking for comprehension vs production skills
+- **Intelligent Scheduling**: Spaced repetition based on proven memory retention intervals
+- **Persistent State**: Seamless resume capability with automatic progress saving
 
-- **New Components**: QueueFilling.svelte for initial word population
-- **Enhanced ModeSelector**: Added "Add Words" mode with queue count indicators
-- **Enhanced QueueStats**: Direction switching buttons for forward/backward learning
-- **Extended LearningController**: 
-  - Queue filling and word management methods
-  - `switchDirection()` method for changing learning direction
-  - Smart card placement logic based on queue size
-- **Route Integration**: /queue-filling page for initial setup and re-entry
-- **Settings Integration**: Backward queue length configuration in settings panel
+### Advanced Queue Management
+- **Smart Word Placement**: Unknown words strategically reinserted for optimal review timing
+- **Queue Size Optimization**: User-configurable backward queue size for personalized learning
+- **No Auto-Population**: Prevents overwhelming users with unwanted vocabulary additions
+- **Manual Expansion**: Users actively choose when and which words to add to their learning pipeline
+
+## Technical Implementation Notes
+
+- **Enhanced LearningController**: Extended with queue filling, direction switching, and smart placement methods
+- **New Component Architecture**: QueueFilling.svelte for Add Words mode, enhanced ModeSelector for three-way switching
+- **Persistent State Management**: All user actions automatically saved with granular progress tracking
+- **Configurable Settings**: Backward queue length and learning preferences stored in user settings
+- **Smart Card Delivery**: Context-aware card presentation based on current mode and available content
