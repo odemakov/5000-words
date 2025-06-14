@@ -1,31 +1,28 @@
 # 5000 Words - French Language Learning App
 
-A comprehensive French vocabulary learning application featuring spaced repetition, adaptive algorithms, and progressive skill building through the 5000 most frequent French words.
+Yet another app nobody cares about. App helps me learn French words.
 
-## 🌟 Features
+## Features
 
 ### Core Learning System
-- **Adaptive Level Detection**: Intelligent placement test determines your starting level (A1-B2)
-- **Spaced Repetition**: Scientific review scheduling with 7/14/30-day intervals
-- **Bidirectional Learning**: Master both French→Russian and Russian→French translations
-- **Queue Management**: Smart card distribution with 30-card learning queues
+- **Level Detection**: Test your starting level (A1-B2)
+- **Spaced Repetition**: Review scheduling with 7/14/30-day intervals
+- **Bidirectional Learning**: Master both way translations
 - **Progress Tracking**: Real-time statistics and learning analytics
 
 ### Modern User Experience
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Progressive Web App**: Installable with offline functionality
 - **Touch & Keyboard**: Support for swipe gestures and keyboard shortcuts
-- **Accessibility**: Screen reader support and high contrast modes
 - **Dark/Light Theme**: Customizable appearance with system preference detection
 
 ### Advanced Features
-- **Settings Panel**: Comprehensive customization options
-- **Data Export/Import**: Backup and restore learning progress
-- **Session Analytics**: Track daily goals, streaks, and time spent
-- **Smart Algorithms**: 80/20 new word to review ratio optimization
-- **Visual Feedback**: Color-coded progress indicators and animations
+- **Settings Panel**: ? Customization options
+- **Data Export/Import**: ? Backup and restore learning progress
+- **Session Analytics**: ? Track daily goals, streaks, and time spent
+- **Smart Algorithms**: ? 80/20 new word to review ratio optimization
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Node.js 18+ and npm
@@ -51,7 +48,7 @@ npm run dev
 3. **Learning Setup**: System initializes personalized learning queues
 4. **Begin Study**: Start learning with spaced repetition algorithm
 
-## 🎯 Learning Methodology
+## Learning Methodology
 
 ### CEFR Level Structure
 - **A1 (Beginner)**: Words 1-800 - Basic everyday expressions
@@ -65,11 +62,11 @@ New Word → Forward Queue → Backward Queue → 7-day Review → 14-day Review
 ```
 
 ### Learning Modes
-- **Learning Mode**: Study new vocabulary in both directions
+- **Learning Forward Mode**: Study new vocabulary in forward direction
+- **Learning Backward Mode**: Study new vocabulary in backward direction
 - **Reviews Mode**: Focus on spaced repetition of previously learned words
-- **Auto-switching**: System suggests optimal mode based on due reviews
 
-## 🏗️ Architecture
+## Architecture
 
 ### Technology Stack
 - **Frontend**: SvelteKit with TypeScript
@@ -77,29 +74,6 @@ New Word → Forward Queue → Backward Queue → 7-day Review → 14-day Review
 - **Storage**: LocalStorage with structured data persistence
 - **Build**: Vite with optimized production builds
 - **PWA**: Service Worker for offline functionality
-
-### Project Structure
-```
-src/
-├── lib/
-│   ├── components/          # Reusable UI components
-│   │   ├── FlashCard.svelte       # Interactive flashcard system
-│   │   ├── ModeSelector.svelte    # Learning/Reviews mode switcher
-│   │   ├── QueueStats.svelte      # Statistics dashboard
-│   │   ├── ProgressHeader.svelte  # Progress tracking header
-│   │   ├── EmptyState.svelte      # Empty state handling
-│   │   └── SettingsPanel.svelte   # Settings and analytics
-│   ├── controllers/         # Business logic
-│   │   ├── LearningController.ts  # Main learning algorithm
-│   │   └── TestController.ts      # Level detection system
-│   ├── types/              # TypeScript definitions
-│   │   └── learning.ts           # Learning system interfaces
-│   └── storage.ts          # Data persistence layer
-├── routes/
-│   ├── learning/           # Main learning interface
-│   └── +page.svelte       # Landing page and level test
-└── static/                # Static assets and word data
-```
 
 ### Data Structure
 ```typescript
@@ -118,7 +92,7 @@ interface LearningState {
 }
 ```
 
-## 🎮 User Interface
+## User Interface
 
 ### Keyboard Shortcuts
 - **← →**: Mark card as unknown/known
@@ -134,10 +108,8 @@ interface LearningState {
 ### Visual Design
 - **Color System**: Green (success), Red (failure), Blue (primary), Yellow/Orange/Green (review tiers)
 - **Typography**: Responsive font scaling with user controls
-- **Animations**: Smooth 60fps transitions with hardware acceleration
-- **Spacing**: 8px grid system for consistent alignment
 
-## 📊 Analytics & Progress
+## Analytics & Progress
 
 ### Real-time Metrics
 - **Session Duration**: Live study time tracking
@@ -151,7 +123,7 @@ interface LearningState {
 - **Learning Curve**: Historical performance data
 - **Export Capability**: JSON backup of complete progress
 
-## 🔧 Development
+## Development
 
 ### Available Scripts
 ```bash
@@ -179,83 +151,21 @@ npm run dev -- --open
 npm run build && npm run preview
 ```
 
-## 🧪 Testing
-
-### Manual Testing Checklist
-- [ ] Level detection test completion
-- [ ] Forward/Backward queue functionality
-- [ ] Spaced repetition scheduling
-- [ ] Settings persistence
-- [ ] Data export/import
-- [ ] Mobile touch gestures
-- [ ] Keyboard navigation
-- [ ] Theme switching
-- [ ] Offline functionality
-
-### Performance Metrics
-- **Initial Load**: < 2 seconds on 3G
-- **Card Interactions**: < 100ms response time
-- **Memory Usage**: < 50MB for full vocabulary
-- **Bundle Size**: < 500KB gzipped
-
-## 🌐 Browser Support
-
-### Minimum Requirements
-- **Chrome**: 88+
-- **Firefox**: 85+
-- **Safari**: 14+
-- **Edge**: 88+
-
-### Progressive Enhancement
-- Core functionality works without JavaScript
-- Enhanced features require modern browser APIs
-- Graceful degradation for older browsers
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🤝 Contributing
+## Contributing
 
 ### Development Guidelines
-1. Follow TypeScript strict mode
-2. Use Prettier for code formatting
-3. Write descriptive commit messages
-4. Test across multiple browsers
-5. Maintain accessibility standards
+- Follow TypeScript strict mode
+- Use Prettier for code formatting
+- Write descriptive commit messages
+- Test across multiple browsers
+- Maintain accessibility standards
 
 ### Feature Requests
 - Open an issue with detailed use case
 - Include mockups for UI changes
 - Consider performance implications
 - Align with CEFR learning objectives
-
-## 🔮 Roadmap
-
-### Version 2.0 (Planned)
-- [ ] Audio pronunciation with native speakers
-- [ ] Sentence examples and context
-- [ ] Social features and study groups
-- [ ] Advanced analytics dashboard
-- [ ] Cloud synchronization
-- [ ] Additional language pairs
-- [ ] Gamification and achievements
-
-### Performance Optimizations
-- [ ] Virtual scrolling for large lists
-- [ ] Service Worker caching strategies
-- [ ] IndexedDB for large datasets
-- [ ] Web Workers for background processing
-
-## 📞 Support
-
-For questions, bug reports, or feature requests:
-- Open an issue on GitHub
-- Check the [FEATURES.md](FEATURES.md) for detailed documentation
-- Review the docs folder for technical specifications
-
----
-
-**Built with ❤️ for language learners**
-
-*Combining scientific learning principles with modern web technology to make French vocabulary acquisition effective and enjoyable.*
