@@ -1,12 +1,16 @@
 import { derived, get, writable } from 'svelte/store';
+import {
+  RECAP_14,
+  RECAP_30,
+  RECAP_7,
+  isLearningBackwardMode,
+  isLearningForwardMode,
+  isLearningMode,
+  isRecapMode,
+  type LearningMode
+} from '../constants/modes';
 import { Storage, type WordData } from '../storage.js';
-import type {
-  CurrentCard,
-  LearningState,
-  QueueStats,
-  RecapWord,
-  WordInQueue
-} from '../types/learning.js';
+import type { CurrentCard, LearningState, RecapWord, WordInQueue } from '../types/learning.js';
 
 // Initialize default learning state
 const createDefaultState = (): LearningState => ({
@@ -57,9 +61,9 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
   ($state) => {
     const { currentMode, forwardQueue, backwardQueue, recap7, recap14, recap30 } = $state;
 
-    if (currentMode === 'learning-forward' || currentMode === 'learning-backward') {
-      // Check forward direction first
-      if ($state.currentMode === 'learning-forward' && forwardQueue.length > 0) {
+    if (isLearningMode(currentMode)) {
+      // Learning mode - handle forward and backward queues
+      if (isLearningForwardMode(currentMode) && forwardQueue.length > 0) {
         const queueItem = forwardQueue[0];
         const wordData = getWordByIndex(queueItem.wordIndex);
         if (wordData) {
@@ -72,7 +76,7 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             attempts: queueItem.attempts
           };
         }
-      } else if ($state.currentMode === 'learning-backward' && backwardQueue.length > 0) {
+      } else if (isLearningBackwardMode(currentMode) && backwardQueue.length > 0) {
         const queueItem = backwardQueue[0];
         const wordData = getWordByIndex(queueItem.wordIndex);
         if (wordData) {
@@ -86,21 +90,32 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
           };
         }
       }
-    } else {
-      // Reviews mode - prioritize oldest due words
-      const allDueWords = [...recap7, ...recap14, ...recap30]
-        .filter((word) => word.dueDate <= Date.now())
+    } else if (isRecapMode(currentMode)) {
+      // Recap mode - show due words from specific recap queue
+      const now = Date.now();
+      let recapQueue: RecapWord[] = [];
+      let reviewType: '7' | '14' | '30' = '7';
+
+      if (currentMode === RECAP_7) {
+        recapQueue = recap7;
+        reviewType = '7';
+      } else if (currentMode === RECAP_14) {
+        recapQueue = recap14;
+        reviewType = '14';
+      } else if (currentMode === RECAP_30) {
+        recapQueue = recap30;
+        reviewType = '30';
+      }
+
+      // Get due words from the specific recap queue
+      const dueWords = recapQueue
+        .filter((word) => word.dueDate <= now)
         .sort((a, b) => a.dueDate - b.dueDate);
 
-      if (allDueWords.length > 0) {
-        const reviewItem = allDueWords[0];
+      if (dueWords.length > 0) {
+        const reviewItem = dueWords[0];
         const wordData = getWordByIndex(reviewItem.wordIndex);
         if (wordData) {
-          // Determine review type
-          let reviewType: '7' | '14' | '30' = '7';
-          if (recap30.some((w) => w.wordIndex === reviewItem.wordIndex)) reviewType = '30';
-          else if (recap14.some((w) => w.wordIndex === reviewItem.wordIndex)) reviewType = '14';
-
           return {
             wordIndex: reviewItem.wordIndex,
             word: wordData.word,
@@ -113,6 +128,33 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
           };
         }
       }
+      // } else if (isRecapMode(currentMode)) {
+      //   // Reviews mode - prioritize oldest due words from all recap queues
+      //   const allDueWords = [...recap7, ...recap14, ...recap30]
+      //     .filter((word) => word.dueDate <= Date.now())
+      //     .sort((a, b) => a.dueDate - b.dueDate);
+
+      //   if (allDueWords.length > 0) {
+      //     const reviewItem = allDueWords[0];
+      //     const wordData = getWordByIndex(reviewItem.wordIndex);
+      //     if (wordData) {
+      //       // Determine review type
+      //       let reviewType: '7' | '14' | '30' = '7';
+      //       if (recap30.some((w) => w.wordIndex === reviewItem.wordIndex)) reviewType = '30';
+      //       else if (recap14.some((w) => w.wordIndex === reviewItem.wordIndex)) reviewType = '14';
+
+      //       return {
+      //         wordIndex: reviewItem.wordIndex,
+      //         word: wordData.word,
+      //         props: wordData.props,
+      //         translations: wordData.translations,
+      //         direction: reviewItem.direction,
+      //         attempts: reviewItem.attempts,
+      //         isReview: true,
+      //         reviewType
+      //       };
+      //     }
+      //   }
     }
 
     return null;
@@ -120,22 +162,36 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
 );
 
 // Derived store for queue statistics
-export const queueStats = derived<typeof learningState, QueueStats>(learningState, ($state) => {
+// Helper function to get due reviews count
+export function getDueRecap7Count(): number {
+  const state = get(learningState);
   const now = Date.now();
-  const dueWords = [...$state.recap7, ...$state.recap14, ...$state.recap30].filter(
-    (word) => word.dueDate <= now
-  );
+  return state.recap7.filter((word) => word.dueDate <= now).length;
+}
 
-  return {
-    forwardCount: $state.forwardQueue.length,
-    backwardCount: $state.backwardQueue.length,
-    dueReviewsCount: dueWords.length,
-    totalReviewsCount: $state.recap7.length + $state.recap14.length + $state.recap30.length,
-    recap7Count: $state.recap7.length,
-    recap14Count: $state.recap14.length,
-    recap30Count: $state.recap30.length
-  };
-});
+// Helper function to get due recap14 count
+export function getDueRecap14Count(): number {
+  const state = get(learningState);
+  const now = Date.now();
+  return state.recap14.filter((word) => word.dueDate <= now).length;
+}
+
+// Helper function to get due recap30 count
+export function getDueRecap30Count(): number {
+  const state = get(learningState);
+  const now = Date.now();
+  return state.recap30.filter((word) => word.dueDate <= now).length;
+}
+
+export function getLearningForwardCount(): number {
+  const state = get(learningState);
+  return state.forwardQueue.length;
+}
+
+export function getLearningBackwardCount(): number {
+  const state = get(learningState);
+  return state.backwardQueue.length;
+}
 
 // Learning Controller class with static methods
 export class LearningController {
@@ -199,11 +255,11 @@ export class LearningController {
 
     const now = Date.now();
 
-    if (state.currentMode === 'learning-forward') {
+    if (isLearningForwardMode(state.currentMode)) {
       this.processForwardQueueResponse(card, known);
-    } else if (state.currentMode === 'learning-backward') {
+    } else if (isLearningBackwardMode(state.currentMode)) {
       this.processBackwardQueueResponse(card, known);
-    } else {
+    } else if (isRecapMode(state.currentMode)) {
       this.processReviewResponse(card, known);
     }
 
@@ -469,26 +525,13 @@ export class LearningController {
     });
   }
 
-  static switchMode(mode: 'learning-forward' | 'learning-backward' | 'reviews') {
+  static switchMode(mode: LearningMode) {
+    if (mode === 'adding') {
+      // Adding mode is handled by the page component
+      return;
+    }
     learningState.update((state) => ({ ...state, currentMode: mode }));
-  }
-
-  static switchDirection(direction: 'forward' | 'backward') {
-    learningState.update((state) => ({
-      ...state,
-      currentDirection: direction
-    }));
     this.saveState();
-  }
-
-  static canSwitchToReviews(): boolean {
-    const stats = get(queueStats);
-    return stats.dueReviewsCount >= 10;
-  }
-
-  static canSwitchToLearning(): boolean {
-    const stats = get(queueStats);
-    return stats.forwardCount > 0 || stats.backwardCount > 0;
   }
 
   static saveState() {

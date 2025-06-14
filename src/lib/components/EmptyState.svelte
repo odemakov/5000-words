@@ -1,12 +1,44 @@
 <script lang="ts">
-  export let mode: 'learning-forward' | 'learning-backward' | 'reviews';
-  export let onModeSwitch: (mode: 'learning-forward' | 'learning-backward' | 'reviews') => void;
-  export let hasReviews: boolean = false;
-  export let hasLearning: boolean = false;
+  import { type LearningMode } from '$lib/constants/modes';
+  export let onModeSwitch: (mode: LearningMode) => void;
+  import { learningState } from '$lib/controllers/LearningController';
+  import {
+    LEARNING_FORWARD,
+    LEARNING_BACKWARD,
+    RECAP_7,
+    RECAP_14,
+    RECAP_30
+  } from '$lib/constants/modes';
+
+  $: canSwitchToForward = $learningState.forwardQueue.length > 0;
+  $: canSwitchToBackward = $learningState.backwardQueue.length > 0;
+  $: canSwitchToLearning = canSwitchToForward || canSwitchToBackward;
+
+  $: canSwitchToRecap7 = $learningState.forwardQueue.length > 0;
+  $: canSwitchToRecap14 = $learningState.recap14.length > 0;
+  $: canSwitchToRecap30 = $learningState.recap30.length > 0;
+  $: canSwitchToRecap = canSwitchToRecap7 || canSwitchToRecap14 || canSwitchToRecap30;
+
+  function handleRecapModes() {
+    if (canSwitchToRecap7) {
+      onModeSwitch(RECAP_7);
+    } else if (canSwitchToRecap14) {
+      onModeSwitch(RECAP_14);
+    } else if (canSwitchToRecap30) {
+      onModeSwitch(RECAP_30);
+    }
+  }
+  function handleLearningModes() {
+    if (canSwitchToForward) {
+      onModeSwitch(LEARNING_FORWARD);
+    } else if (canSwitchToBackward) {
+      onModeSwitch(LEARNING_BACKWARD);
+    }
+  }
 </script>
 
 <div class="flex flex-col items-center justify-center py-12 text-center">
-  {#if !hasLearning && !hasReviews}
+  {#if !canSwitchToLearning && !canSwitchToRecap}
     <!-- Completed all words -->
     <div
       class="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-blue-500"
@@ -30,7 +62,7 @@
         content!
       </p>
     </div>
-  {:else if (mode === 'learning-forward' || mode === 'learning-backward') && !hasLearning}
+  {:else if canSwitchToForward || canSwitchToBackward}
     <!-- No learning cards available -->
     <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
       <svg class="h-10 w-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,9 +78,9 @@
     <p class="mb-4 max-w-md text-gray-600">
       You've worked through all available learning cards. Great progress!
     </p>
-    {#if hasReviews}
+    {#if canSwitchToRecap7}
       <button
-        on:click={() => onModeSwitch('reviews')}
+        on:click={handleRecapModes}
         class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
       >
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,7 +101,7 @@
         </p>
       </div>
     {/if}
-  {:else if mode === 'reviews' && !hasReviews}
+  {:else if canSwitchToRecap && !canSwitchToLearning}
     <!-- No review cards available -->
     <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
       <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,9 +117,9 @@
     <p class="mb-4 max-w-md text-gray-600">
       All your words are still fresh in memory. Come back later for spaced repetition reviews.
     </p>
-    {#if hasLearning}
+    {#if canSwitchToLearning}
       <button
-        on:click={() => onModeSwitch('learning-forward')}
+        on:click={handleLearningModes}
         class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
       >
         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

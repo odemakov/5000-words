@@ -3,26 +3,39 @@
   import {
     LearningController,
     currentCard,
-    queueStats,
-    learningState
+    learningState,
+    getDueRecap7Count,
+    getDueRecap14Count,
+    getDueRecap30Count,
+    getLearningForwardCount,
+    getLearningBackwardCount
   } from '$lib/controllers/LearningController';
   import FlashCard from '$lib/components/FlashCard.svelte';
   import ModeSelector from '$lib/components/ModeSelector.svelte';
-  import QueueStats from '$lib/components/QueueStats.svelte';
   import ProgressHeader from '$lib/components/ProgressHeader.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import SettingsPanel from '$lib/components/SettingsPanel.svelte';
   import QueueFilling from '$lib/components/QueueFilling.svelte';
+  import {
+    LEARNING_FORWARD,
+    ADDING,
+    isLearningMode,
+    isLearningForwardMode,
+    type LearningMode,
+    isLearningBackwardMode,
+    isRecap7Mode,
+    isRecap14Mode,
+    isRecap30Mode,
+    isAddingMode
+  } from '$lib/constants/modes';
 
   // Reactive data
   $: card = $currentCard;
-  $: stats = $queueStats;
   $: state = $learningState;
 
   let showSettings = false;
   let isInitialized = false;
-  let currentMode: 'learning-forward' | 'learning-backward' | 'reviews' | 'adding' =
-    'learning-forward';
+  let currentMode: LearningMode = LEARNING_FORWARD;
   let addingWord: { word: string; props: string[]; translations: string[]; index: number } | null =
     null;
   let addingStats = { learnedCount: 0, canSwitchToLearning: false };
@@ -48,20 +61,26 @@
     await LearningController.processCardResponse(false);
   }
 
-  function handleModeSwitch(mode: 'learning-forward' | 'learning-backward' | 'reviews' | 'adding') {
+  function handleModeSwitch(mode: LearningMode) {
     // Check if mode switch is allowed
-    if (mode === 'reviews' && !LearningController.canSwitchToReviews()) {
+    if (isRecap7Mode(mode) && getDueRecap7Count() === 0) {
       return; // Mode selector should handle disabled state
     }
-    if (mode === 'learning-forward' && !LearningController.canSwitchToLearning()) {
+    if (isRecap14Mode(mode) && getDueRecap14Count() === 0) {
       return; // Mode selector should handle disabled state
     }
-    if (mode === 'learning-backward' && !LearningController.canSwitchToLearning()) {
+    if (isRecap30Mode(mode) && getDueRecap30Count() === 0) {
+      return; // Mode selector should handle disabled state
+    }
+    if (isLearningForwardMode(mode) && getLearningForwardCount() === 0) {
+      return; // Mode selector should handle disabled state
+    }
+    if (isLearningBackwardMode(mode) && getLearningBackwardCount() === 0) {
       return; // Mode selector should handle disabled state
     }
 
-    if (mode === 'adding') {
-      currentMode = 'adding';
+    if (isAddingMode(mode)) {
+      currentMode = ADDING;
       loadAddingWord();
       updateAddingStats();
     } else {
@@ -155,7 +174,6 @@
   // Determine if we can switch modes
   $: canSwitchToLearning =
     $learningState.forwardQueue.length > 0 || $learningState.backwardQueue.length > 0;
-  $: canSwitchToReviews = stats.dueReviewsCount >= 10;
 </script>
 
 <svelte:head>
@@ -188,12 +206,10 @@
         {currentMode}
         onModeChange={handleModeSwitch}
         learningAvailable={canSwitchToLearning}
-        reviewsAvailable={canSwitchToReviews}
         addingAvailable={true}
-        dueReviewsCount={stats.dueReviewsCount}
       />
 
-      {#if currentMode === 'adding'}
+      {#if currentMode === ADDING}
         <div class="w-full">
           {#if addingWord}
             <QueueFilling
@@ -242,75 +258,59 @@
             </div>
           {/if}
         </div>
-      {:else}
-        <QueueStats
-          dueReviewsCount={stats.dueReviewsCount}
-          totalReviewsCount={stats.totalReviewsCount}
-          currentMode={state.currentMode}
-          recap7Count={stats.recap7Count}
-          recap14Count={stats.recap14Count}
-          recap30Count={stats.recap30Count}
-        />
-
-        {#if card}
-          <div class="w-full max-w-md">
-            <FlashCard
-              word={card.word}
-              properties={card.props}
-              translations={card.translations}
-              direction={card.direction}
-              onSwipeRight={handleKnown}
-              onSwipeLeft={handleUnknown}
-            />
-
-            {#if card.isReview}
-              <div class="mt-2 text-center">
-                <span
-                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  class:bg-yellow-100={card.reviewType === '7'}
-                  class:text-yellow-800={card.reviewType === '7'}
-                  class:bg-orange-100={card.reviewType === '14'}
-                  class:text-orange-800={card.reviewType === '14'}
-                  class:bg-green-100={card.reviewType === '30'}
-                  class:text-green-800={card.reviewType === '30'}
-                >
-                  {card.reviewType}-day review
-                </span>
-              </div>
-            {/if}
-          </div>
-
-          <div class="mt-6 max-w-sm text-center text-sm text-gray-600">
-            <p class="mb-2">
-              <span class="font-medium">Tap</span> to reveal translation
-            </p>
-            <div class="flex items-center justify-center space-x-4 text-xs">
-              <div class="flex items-center space-x-1">
-                <span class="inline-block h-3 w-3 rounded bg-red-500"></span>
-                <span>Don't know (← or swipe left)</span>
-              </div>
-              <div class="flex items-center space-x-1">
-                <span class="inline-block h-3 w-3 rounded bg-green-500"></span>
-                <span>Know (→ or swipe right)</span>
-              </div>
-            </div>
-
-            {#if state.currentMode === 'learning-forward' || state.currentMode === 'learning-backward'}
-              <p class="mt-3 text-xs text-blue-600">
-                Mode: {state.currentMode === 'learning-forward'
-                  ? 'French → Russian'
-                  : 'Russian → French'}
-              </p>
-            {/if}
-          </div>
-        {:else}
-          <EmptyState
-            mode={state.currentMode}
-            onModeSwitch={handleModeSwitch}
-            hasReviews={canSwitchToReviews}
-            hasLearning={canSwitchToLearning}
+      {:else if card}
+        <div class="w-full max-w-md">
+          <FlashCard
+            word={card.word}
+            properties={card.props}
+            translations={card.translations}
+            direction={card.direction}
+            onSwipeRight={handleKnown}
+            onSwipeLeft={handleUnknown}
           />
-        {/if}
+
+          {#if card.isReview}
+            <div class="mt-2 text-center">
+              <span
+                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                class:bg-yellow-100={card.reviewType === '7'}
+                class:text-yellow-800={card.reviewType === '7'}
+                class:bg-orange-100={card.reviewType === '14'}
+                class:text-orange-800={card.reviewType === '14'}
+                class:bg-green-100={card.reviewType === '30'}
+                class:text-green-800={card.reviewType === '30'}
+              >
+                {card.reviewType}-day review
+              </span>
+            </div>
+          {/if}
+        </div>
+
+        <div class="mt-6 max-w-sm text-center text-sm text-gray-600">
+          <p class="mb-2">
+            <span class="font-medium">Tap</span> to reveal translation
+          </p>
+          <div class="flex items-center justify-center space-x-4 text-xs">
+            <div class="flex items-center space-x-1">
+              <span class="inline-block h-3 w-3 rounded bg-red-500"></span>
+              <span>Don't know (← or swipe left)</span>
+            </div>
+            <div class="flex items-center space-x-1">
+              <span class="inline-block h-3 w-3 rounded bg-green-500"></span>
+              <span>Know (→ or swipe right)</span>
+            </div>
+          </div>
+
+          {#if isLearningMode(state.currentMode)}
+            <p class="mt-3 text-xs text-blue-600">
+              Mode: {isLearningForwardMode(state.currentMode)
+                ? 'French → Russian'
+                : 'Russian → French'}
+            </p>
+          {/if}
+        </div>
+      {:else}
+        <EmptyState onModeSwitch={handleModeSwitch} />
       {/if}
 
       <div class="mt-8 text-center text-xs text-gray-400">

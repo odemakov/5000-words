@@ -22,7 +22,13 @@ export interface LearningState {
   learnedList: number[]; // Word indices that are fully learned
 
   // Current app state
-  currentMode: 'learning-forward' | 'learning-backward' | 'reviews';
+  currentMode:
+    | 'learning-forward'
+    | 'learning-backward'
+    | 'recap7'
+    | 'recap14'
+    | 'recap30'
+    | 'adding';
 
   // Session tracking
   lastActivity: number;
@@ -63,16 +69,6 @@ export interface CurrentCard {
   attempts?: number;
   isReview?: boolean;
   reviewType?: '7' | '14' | '30';
-}
-
-export interface QueueStats {
-  forwardCount: number;
-  backwardCount: number;
-  dueReviewsCount: number;
-  totalReviewsCount: number;
-  recap7Count: number;
-  recap14Count: number;
-  recap30Count: number;
 }
 
 // Settings interface
