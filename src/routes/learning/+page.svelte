@@ -191,7 +191,6 @@
         reviewsAvailable={canSwitchToReviews}
         addingAvailable={true}
         dueReviewsCount={stats.dueReviewsCount}
-        forwardQueueCount={$learningState.forwardQueue.length}
       />
 
       {#if currentMode === 'adding'}

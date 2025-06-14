@@ -7,7 +7,7 @@
   export let reviewsAvailable: boolean;
   export let addingAvailable: boolean = true;
   export let dueReviewsCount: number = 0;
-  export let forwardQueueCount: number = 0;
+  import { learningState } from '$lib/controllers/LearningController';
 </script>
 
 <div class="mb-6 flex rounded-lg bg-white p-1 shadow-sm">
@@ -33,8 +33,8 @@
         />
       </svg>
       <span>Learning</span>
-      {#if forwardQueueCount > 0}
-        <span class="ml-1 text-xs opacity-75">({forwardQueueCount})</span>
+      {#if $learningState.forwardQueue.length > 0}
+        <span class="ml-1 text-xs opacity-75">({$learningState.forwardQueue.length})</span>
       {/if}
     </div>
   </button>
