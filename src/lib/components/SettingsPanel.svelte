@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { DailyStats } from '../types/learning.js';
-  import { LearningController } from '../controllers/LearningController.js';
+  import { LearningController, learningState } from '../controllers/LearningController.js';
   import { Storage } from '../storage.js';
 
   export let onClose: () => void;
-  export let currentLevel: 'A1' | 'A2' | 'B1' | 'B2';
-  export let todayStats: DailyStats;
+
+  $: currentLevel = $learningState.detectedLevel;
+  $: todayStats = $learningState.todayStats;
 
   let showResetConfirmation = false;
   let showExportSuccess = false;

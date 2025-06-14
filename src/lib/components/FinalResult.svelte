@@ -1,13 +1,16 @@
 <script lang="ts">
+  import { type Level } from '../constants/modes';
+  import { learningState } from '$lib/controllers/LearningController';
   // Props
-  export let level: 'A1' | 'A2' | 'B1' | 'B2' = 'A1';
   export let startingWord = 1;
+
+  $: level = $learningState.detectedLevel;
 
   // Callback props
   export let onContinue = () => {};
 
   // Map level to descriptive text
-  const levelDescriptions: Record<'A1' | 'A2' | 'B1' | 'B2', string> = {
+  const levelDescriptions: Record<Level, string> = {
     A1: 'Beginner',
     A2: 'Elementary',
     B1: 'Intermediate',

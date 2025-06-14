@@ -56,7 +56,6 @@
   <main class="flex flex-1 flex-col items-center justify-center p-4">
     {#if isCompleted}
       <FinalResult
-        level={detectedLevel as 'A1' | 'A2' | 'B1' | 'B2'}
         startingWord={getStartingWordForLevel(detectedLevel)}
         onContinue={handleStartLearning}
       />

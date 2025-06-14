@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { Storage } from '../lib/storage.js';
+  import { type Level } from '$lib/constants/modes';
   import { LearningController } from '../lib/controllers/LearningController.js';
   import Loader from '../lib/components/Loader.svelte';
   import FlashCard from '$lib/components/FlashCard.svelte';
@@ -78,10 +79,7 @@
         known: response
       }));
 
-      await LearningController.initializeQueueFilling(
-        detectedLevel as 'A1' | 'A2' | 'B1' | 'B2',
-        testResults
-      );
+      await LearningController.initializeQueueFilling(detectedLevel as Level, testResults);
 
       // Navigate to learning page
       goto('/learning');
@@ -130,7 +128,6 @@
       <main class="flex flex-1 flex-col items-center justify-center p-4">
         {#if isCompleted}
           <FinalResult
-            level={detectedLevel as 'A1' | 'A2' | 'B1' | 'B2'}
             startingWord={getStartingWordForLevel(detectedLevel)}
             onContinue={handleLandingComplete}
           />

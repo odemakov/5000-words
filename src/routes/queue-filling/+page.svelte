@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { LEVEL_A1 } from '$lib/constants/modes';
   import QueueFilling from '$lib/components/QueueFilling.svelte';
   import { LearningController, learningState } from '$lib/controllers/LearningController';
 
@@ -11,7 +12,7 @@
   let isInitialized = false;
 
   // Get level from URL params
-  $: level = $page.url.searchParams.get('level') || 'A1';
+  $: level = $page.url.searchParams.get('level') || LEVEL_A1;
 
   onMount(async () => {
     // Check if we have a valid learning state

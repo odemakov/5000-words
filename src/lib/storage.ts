@@ -1,3 +1,5 @@
+import { LEVEL_A1, LEVEL_A2, LEVEL_B1, LEVEL_B2 } from './constants/modes';
+
 const prefix = '5000-words:';
 const words_data = prefix + 'words_data';
 const words_version = prefix + 'words_version';
@@ -130,16 +132,16 @@ export class Storage {
     // Map level name to numerical value
     let detectedLevel = 0;
     switch (levelName) {
-      case 'A1':
+      case LEVEL_A1:
         detectedLevel = 1;
         break;
-      case 'A2':
+      case LEVEL_A2:
         detectedLevel = 2;
         break;
-      case 'B1':
+      case LEVEL_B1:
         detectedLevel = 3;
         break;
-      case 'B2':
+      case LEVEL_B2:
         detectedLevel = 4;
         break;
     }

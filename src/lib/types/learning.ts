@@ -1,7 +1,9 @@
+import { type Level } from '$lib/constants/modes';
+
 // Core learning state interface with optimized data structures
 export interface LearningState {
   // User level data
-  detectedLevel: 'A1' | 'A2' | 'B1' | 'B2';
+  detectedLevel: Level;
   levelTestResults: Array<{ wordId: number; known: boolean }>;
 
   // Progress tracking

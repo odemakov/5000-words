@@ -1,4 +1,5 @@
 import { derived, get, writable } from 'svelte/store';
+import { LEVEL_A1, LEVEL_A2, LEVEL_B1, LEVEL_B2 } from '../constants/modes';
 import { Storage } from '../storage.js';
 
 // Word interface matching the data structure
@@ -166,13 +167,13 @@ export function undo(): void {
 
 export function getStartingWordForLevel(level: string): number {
   switch (level) {
-    case 'A1':
+    case LEVEL_A1:
       return 1;
-    case 'A2':
+    case LEVEL_A2:
       return 801;
-    case 'B1':
+    case LEVEL_B1:
       return 2001;
-    case 'B2':
+    case LEVEL_B2:
       return 4001;
     default:
       return 1;
@@ -180,10 +181,10 @@ export function getStartingWordForLevel(level: string): number {
 }
 
 function determineLevel(lastFailedBatch: number): string {
-  if (lastFailedBatch <= 800) return 'A1';
-  if (lastFailedBatch <= 2000) return 'A2';
-  if (lastFailedBatch <= 4000) return 'B1';
-  return 'B2';
+  if (lastFailedBatch <= 800) return LEVEL_A1;
+  if (lastFailedBatch <= 2000) return LEVEL_A2;
+  if (lastFailedBatch <= 4000) return LEVEL_B1;
+  return LEVEL_B2;
 }
 
 export function resetTest(): void {

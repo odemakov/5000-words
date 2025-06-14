@@ -11,7 +11,6 @@
     isLearningMode,
     isLearningForwardMode,
     isLearningBackwardMode,
-    isRecapMode,
     isRecap7Mode,
     isRecap14Mode,
     isRecap30Mode,
@@ -228,29 +227,26 @@
   </div>
 
   <!-- Add Words Button -->
-  <div class="flex rounded-lg bg-white p-1 shadow-sm">
-    <button
-      class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-      class:bg-purple-500={currentMode === ADDING}
-      class:text-white={currentMode === ADDING}
-      class:shadow-sm={currentMode === ADDING}
-      class:text-gray-600={currentMode !== ADDING}
-      class:hover:bg-gray-50={currentMode !== ADDING}
-      on:click={() => handleModeClick(ADDING)}
-    >
-      <div class="flex items-center justify-center space-x-2">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-          />
-        </svg>
-        <span>{MODE_INFO[ADDING].label}</span>
-      </div>
-    </button>
-  </div>
+  {#if currentMode !== ADDING}
+    <div class="flex rounded-lg bg-white p-1 shadow-sm">
+      <button
+        class="etxt-gray-600 flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200 hover:bg-gray-50"
+        on:click={() => handleModeClick(ADDING)}
+      >
+        <div class="flex items-center justify-center space-x-2">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+          <span>{MODE_INFO[ADDING].label}</span>
+        </div>
+      </button>
+    </div>
+  {/if}
 </div>
 
 <!-- Mode-specific messages -->
@@ -258,18 +254,6 @@
   <div class="mb-4 rounded-lg bg-yellow-50 p-4 text-center">
     <p class="text-sm text-yellow-800">
       No cards available for study. Add more words to your queue! 📚
-    </p>
-  </div>
-{:else if isLearningMode(currentMode) && !isModeAvailable(currentMode)}
-  <div class="mb-4 rounded-lg bg-blue-50 p-4 text-center">
-    <p class="text-sm text-blue-800">
-      This learning queue is empty. Try the other direction or add more words!
-    </p>
-  </div>
-{:else if isRecapMode(currentMode) && !isModeAvailable(currentMode)}
-  <div class="mb-4 rounded-lg bg-green-50 p-4 text-center">
-    <p class="text-sm text-green-800">
-      No cards ready for {MODE_INFO[currentMode].label} recap yet. Keep learning!
     </p>
   </div>
 {:else if isAddingMode(currentMode)}

@@ -5,6 +5,10 @@ export const RECAP_7 = 'recap7' as const;
 export const RECAP_14 = 'recap14' as const;
 export const RECAP_30 = 'recap30' as const;
 export const ADDING = 'adding' as const;
+export const LEVEL_A1 = 'A1' as const;
+export const LEVEL_A2 = 'A2' as const;
+export const LEVEL_B1 = 'B1' as const;
+export const LEVEL_B2 = 'B2' as const;
 
 // Mode type
 export type LearningMode =
@@ -14,6 +18,9 @@ export type LearningMode =
   | typeof RECAP_14
   | typeof RECAP_30
   | typeof ADDING;
+
+// Mode type
+export type Level = typeof LEVEL_A1 | typeof LEVEL_A2 | typeof LEVEL_B1 | typeof LEVEL_B2;
 
 // Helper functions
 export function isLearningForwardMode(mode: string): mode is typeof LEARNING_FORWARD {

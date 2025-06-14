@@ -64,21 +64,6 @@
 <svelte:window on:keydown={handleKeyDown} />
 
 <div class="min-h-screen bg-gray-50">
-  <!-- Header -->
-  <div class="bg-white shadow-sm">
-    <div class="mx-auto max-w-2xl px-4 py-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-xl font-bold text-gray-900">Building Your Learning Queue</h1>
-          <p class="text-sm text-gray-600">Level {level} • Word {currentIndex + 1}</p>
-        </div>
-        <button on:click={handleSkip} class="text-sm text-gray-500 hover:text-gray-700">
-          Skip
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- Main Content -->
   <div class="mx-auto flex max-w-2xl flex-col items-center px-4 py-6">
     <!-- Queue Stats -->
@@ -93,20 +78,6 @@
           <div class="text-xs tracking-wide text-gray-500 uppercase">Already Know</div>
         </div>
       </div>
-
-      {#if $learningState.forwardQueue.length >= 10}
-        <div class="mt-4 rounded-md bg-green-50 p-3 text-center">
-          <p class="text-sm font-medium text-green-800">
-            Ready to start learning! You have {$learningState.forwardQueue.length} words in your queue.
-          </p>
-        </div>
-      {:else}
-        <div class="mt-4 rounded-md bg-blue-50 p-3 text-center">
-          <p class="text-sm text-blue-800">
-            Add {10 - $learningState.forwardQueue.length} more words to unlock learning mode
-          </p>
-        </div>
-      {/if}
     </div>
 
     <!-- Flash Card -->

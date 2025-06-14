@@ -1,5 +1,9 @@
 import { derived, get, writable } from 'svelte/store';
 import {
+  LEVEL_A1,
+  LEVEL_A2,
+  LEVEL_B1,
+  LEVEL_B2,
   RECAP_14,
   RECAP_30,
   RECAP_7,
@@ -7,14 +11,15 @@ import {
   isLearningForwardMode,
   isLearningMode,
   isRecapMode,
-  type LearningMode
+  type LearningMode,
+  type Level
 } from '../constants/modes';
 import { Storage, type WordData } from '../storage.js';
 import type { CurrentCard, LearningState, RecapWord, WordInQueue } from '../types/learning.js';
 
 // Initialize default learning state
 const createDefaultState = (): LearningState => ({
-  detectedLevel: 'A1',
+  detectedLevel: LEVEL_A1,
   levelTestResults: [],
   progress: 0,
   wordsLearned: 0,
@@ -195,30 +200,30 @@ export function getLearningBackwardCount(): number {
 
 // Learning Controller class with static methods
 export class LearningController {
-  static getStartingIndexForLevel(level: 'A1' | 'A2' | 'B1' | 'B2'): number {
+  static getStartingIndexForLevel(level: Level): number {
     switch (level) {
-      case 'A1':
+      case LEVEL_A1:
         return 0;
-      case 'A2':
+      case LEVEL_A2:
         return 800;
-      case 'B1':
+      case LEVEL_B1:
         return 2000;
-      case 'B2':
+      case LEVEL_B2:
         return 4000;
       default:
         return 0;
     }
   }
 
-  static getMaxIndexForLevel(level: 'A1' | 'A2' | 'B1' | 'B2'): number {
+  static getMaxIndexForLevel(level: Level): number {
     switch (level) {
-      case 'A1':
+      case LEVEL_A1:
         return 799;
-      case 'A2':
+      case LEVEL_A2:
         return 1999;
-      case 'B1':
+      case LEVEL_B1:
         return 3999;
-      case 'B2':
+      case LEVEL_B2:
         return 4999;
       default:
         return 799;
@@ -226,7 +231,7 @@ export class LearningController {
   }
 
   static async initializeLearning(
-    detectedLevel: 'A1' | 'A2' | 'B1' | 'B2',
+    detectedLevel: Level,
     testResults: Array<{ wordId: number; known: boolean }>
   ) {
     const startingIndex = this.getStartingIndexForLevel(detectedLevel);
@@ -272,9 +277,6 @@ export class LearningController {
         timeSpent: Math.floor((now - state.sessionStartTime) / 1000)
       }
     }));
-
-    // Auto-switch mode if needed
-    this.updateCurrentMode();
 
     this.saveState();
   }
@@ -503,28 +505,6 @@ export class LearningController {
     });
   }
 
-  static updateCurrentMode() {
-    learningState.update((state) => {
-      // Auto-switch to the queue that has cards available
-      if (state.currentMode === 'learning-forward' || state.currentMode === 'learning-backward') {
-        if (
-          state.currentMode === 'learning-forward' &&
-          state.forwardQueue.length === 0 &&
-          state.backwardQueue.length > 0
-        ) {
-          return { ...state, currentMode: 'learning-backward' };
-        } else if (
-          state.currentMode === 'learning-backward' &&
-          state.backwardQueue.length === 0 &&
-          state.forwardQueue.length > 0
-        ) {
-          return { ...state, currentMode: 'learning-forward' };
-        }
-      }
-      return state;
-    });
-  }
-
   static switchMode(mode: LearningMode) {
     if (mode === 'adding') {
       // Adding mode is handled by the page component
@@ -563,7 +543,7 @@ export class LearningController {
 
   // Queue filling methods for initial population
   static async initializeQueueFilling(
-    detectedLevel: 'A1' | 'A2' | 'B1' | 'B2',
+    detectedLevel: Level,
     testResults: Array<{ wordId: number; known: boolean }>
   ) {
     const startingIndex = this.getStartingIndexForLevel(detectedLevel);
