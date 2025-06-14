@@ -60,7 +60,7 @@
   }
 
   function handleTouchStart(e: TouchEvent) {
-    console.log('Touch start');
+    console.debug('Touch start');
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
   }
@@ -86,7 +86,7 @@
   }
 
   function handleTouchEnd(e: TouchEvent) {
-    console.log('Touch end');
+    console.debug('Touch end');
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
 

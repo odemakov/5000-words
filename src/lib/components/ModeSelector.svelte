@@ -20,7 +20,6 @@
 
   export let currentMode: LearningMode;
   export let onModeChange: (mode: LearningMode) => void;
-  export let learningAvailable: boolean;
   export let dueReviewsCount: number = 0;
 
   // Calculate recap stats
@@ -250,15 +249,9 @@
 </div>
 
 <!-- Mode-specific messages -->
-{#if !learningAvailable && dueReviewsCount === 0}
-  <div class="mb-4 rounded-lg bg-yellow-50 p-4 text-center">
-    <p class="text-sm text-yellow-800">
-      No cards available for study. Add more words to your queue! 📚
-    </p>
-  </div>
-{:else if isAddingMode(currentMode)}
-  <div class="mb-4 rounded-lg bg-purple-50 p-4 text-center">
-    <p class="text-sm text-purple-800">
+{#if isAddingMode(currentMode)}
+  <div class="mb-4 rounded-lg bg-blue-50 p-4 text-center">
+    <p class="text-sm text-blue-800">
       Review words and decide which ones to add to your learning queue.
     </p>
   </div>

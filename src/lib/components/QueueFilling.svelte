@@ -128,24 +128,5 @@
         </p>
       </div>
     {/if}
-
-    <!-- Progress Bar -->
-    <div class="mt-8 w-full max-w-md">
-      <div class="mb-2 flex items-center justify-between text-xs text-gray-500">
-        <span>Queue Progress</span>
-        <span>{Math.min($learningState.forwardQueue.length, 10)}/10 minimum</span>
-      </div>
-      <div class="h-2 w-full rounded-full bg-gray-200">
-        <div
-          class="h-2 rounded-full bg-blue-600 transition-all duration-300"
-          style="width: {Math.min(($learningState.forwardQueue.length / 10) * 100, 100)}%"
-        ></div>
-      </div>
-    </div>
-
-    <!-- Keyboard Shortcuts -->
-    <div class="mt-8 text-center text-xs text-gray-400">
-      <p>Keyboard shortcuts: ← → for answers, Enter to start learning, Esc to skip</p>
-    </div>
   </div>
 </div>

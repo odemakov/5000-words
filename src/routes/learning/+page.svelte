@@ -20,7 +20,6 @@
     LEVEL_A1,
     LEARNING_FORWARD,
     ADDING,
-    isLearningMode,
     isLearningForwardMode,
     type LearningMode,
     isLearningBackwardMode,
@@ -36,7 +35,6 @@
 
   // Check if we should show empty state for current mode
   $: shouldShowEmptyState = (() => {
-    console.log(state.currentMode, isLearningForwardMode(state.currentMode));
     if (isLearningForwardMode(state.currentMode) && state.forwardQueue.length === 0) return true;
     if (isLearningBackwardMode(state.currentMode) && state.backwardQueue.length === 0) return true;
     if (isRecap7Mode(state.currentMode) && state.backwardQueue.length === 0) return true;
@@ -184,10 +182,6 @@
       loadAddingWord();
     }
   }
-
-  // Determine if we can switch modes
-  $: canSwitchToLearning =
-    $learningState.forwardQueue.length > 0 || $learningState.backwardQueue.length > 0;
 </script>
 
 <svelte:head>
@@ -211,11 +205,7 @@
     <ProgressHeader onSettingsClick={handleSettingsToggle} />
 
     <div class="mx-auto flex max-w-2xl flex-col items-center px-4 py-6">
-      <ModeSelector
-        {currentMode}
-        onModeChange={handleModeSwitch}
-        learningAvailable={canSwitchToLearning}
-      />
+      <ModeSelector {currentMode} onModeChange={handleModeSwitch} />
 
       {#if currentMode === ADDING}
         <div class="w-full">
@@ -224,10 +214,8 @@
               word={addingWord.word}
               properties={addingWord.props}
               translations={addingWord.translations}
-              currentIndex={addingWord.index}
               learnedCount={addingStats.learnedCount}
               canSwitchToLearning={addingStats.canSwitchToLearning}
-              level={state.detectedLevel}
               on:addToQueue={handleAddToQueue}
               on:addToLearned={handleAddToLearned}
               on:switchToLearning={handleSwitchToLearning}
@@ -332,22 +320,10 @@
               <span>Know (→ or swipe right)</span>
             </div>
           </div>
-
-          {#if isLearningMode(state.currentMode)}
-            <p class="mt-3 text-xs text-blue-600">
-              Mode: {isLearningForwardMode(state.currentMode)
-                ? 'French → Russian'
-                : 'Russian → French'}
-            </p>
-          {/if}
         </div>
       {:else}
         <EmptyState onModeSwitch={handleModeSwitch} />
       {/if}
-
-      <div class="mt-8 text-center text-xs text-gray-400">
-        <p>Keyboard shortcuts: ← → for answers, Ctrl+S for settings</p>
-      </div>
     </div>
 
     {#if showSettings}
