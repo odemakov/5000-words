@@ -339,7 +339,6 @@ export class LearningController {
           attempts: card.attempts || 0,
           dueDate: now + 7 * 24 * 60 * 60 * 1000, // 7 days from now
           reviewCount: 0,
-          lastReviewAt: now,
           interval: 7
         };
 
@@ -403,7 +402,6 @@ export class LearningController {
             ...currentWord,
             dueDate: now + 14 * 24 * 60 * 60 * 1000,
             reviewCount: currentWord.reviewCount + 1,
-            lastReviewAt: now,
             interval: 14
           };
           newReviewQueue.push(updatedReviewItem);
@@ -413,7 +411,6 @@ export class LearningController {
             ...currentWord,
             dueDate: now + 30 * 24 * 60 * 60 * 1000,
             reviewCount: currentWord.reviewCount + 1,
-            lastReviewAt: now,
             interval: 30
           };
           newReviewQueue.push(updatedReviewItem);
@@ -448,7 +445,6 @@ export class LearningController {
             ...currentWord,
             dueDate: now + 14 * 24 * 60 * 60 * 1000,
             reviewCount: currentWord.reviewCount + 1,
-            lastReviewAt: now,
             interval: 14
           };
           newReviewQueue.push(updatedReviewItem);
@@ -458,7 +454,6 @@ export class LearningController {
             ...currentWord,
             dueDate: now + 7 * 24 * 60 * 60 * 1000,
             reviewCount: currentWord.reviewCount + 1,
-            lastReviewAt: now,
             interval: 7
           };
           newReviewQueue.push(updatedReviewItem);

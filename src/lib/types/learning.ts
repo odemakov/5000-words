@@ -41,7 +41,6 @@ export interface WordInQueue {
 export interface ReviewWord extends WordInQueue {
   dueDate: number;
   reviewCount: number;
-  lastReviewAt: number;
   interval: number; // Current interval in days (7, 14, or 30)
 }
 

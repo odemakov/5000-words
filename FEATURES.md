@@ -135,7 +135,6 @@ interface RecapWord extends WordInQueue {
   dueDate: number;           // Next review date
   direction: 'forward' | 'backward';  // Review direction
   reviewCount: number;       // Total reviews completed
-  lastReviewAt: number;      // Last review timestamp
 }
 ```
 
