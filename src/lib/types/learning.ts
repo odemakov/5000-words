@@ -40,7 +40,6 @@ export interface WordInQueue {
 // Review word extends queue item with review-specific data
 export interface ReviewWord extends WordInQueue {
   dueDate: number;
-  direction: 'forward' | 'backward';
   reviewCount: number;
   lastReviewAt: number;
   interval: number; // Current interval in days (7, 14, or 30)
@@ -54,13 +53,18 @@ export interface DailyStats {
   streakDays: number;
 }
 
+export enum CardDirection {
+  FORWARD = 'forward',
+  BACKWARD = 'backward'
+}
+
 // UI-focused interfaces that combine word data with queue metadata
 export interface CurrentCard {
   wordIndex: number;
   word: string;
   props: string[];
   translations: string[];
-  direction: 'forward' | 'backward';
+  direction: CardDirection;
   attempts?: number;
   isReview?: boolean;
   reviewInterval?: number; // 7, 14, or 30

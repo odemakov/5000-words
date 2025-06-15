@@ -10,7 +10,13 @@ import {
   type LearningMode,
   type Level
 } from '$lib/constants/modes';
-import type { CurrentCard, LearningState, ReviewWord, WordInQueue } from '$lib/types/learning';
+import {
+  CardDirection,
+  type CurrentCard,
+  type LearningState,
+  type ReviewWord,
+  type WordInQueue
+} from '$lib/types/learning';
 import { derived, get, writable } from 'svelte/store';
 import { Storage, type WordData } from '../storage.js';
 
@@ -77,7 +83,7 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             word: wordData.word,
             props: wordData.props,
             translations: wordData.translations,
-            direction: 'forward' as const,
+            direction: CardDirection.FORWARD,
             attempts: queueItem.attempts
           };
         }
@@ -90,7 +96,7 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             word: wordData.word,
             props: wordData.props,
             translations: wordData.translations,
-            direction: 'backward' as const,
+            direction: CardDirection.BACKWARD,
             attempts: queueItem.attempts
           };
         }
@@ -113,7 +119,7 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             word: wordData.word,
             props: wordData.props,
             translations: wordData.translations,
-            direction: reviewItem.direction,
+            direction: Math.random() < 0.5 ? CardDirection.FORWARD : CardDirection.BACKWARD,
             attempts: reviewItem.attempts,
             isReview: true,
             reviewInterval: reviewItem.interval
@@ -326,12 +332,12 @@ export class LearningController {
 
       if (known) {
         // Move to review queue with 7-day interval
+        // Cards from backward queue should be reviewed in backward direction
         const reviewItem: ReviewWord = {
           wordIndex: card.wordIndex,
           addedAt: state.backwardQueue.find((w) => w.wordIndex === card.wordIndex)?.addedAt || now,
           attempts: card.attempts || 0,
           dueDate: now + 7 * 24 * 60 * 60 * 1000, // 7 days from now
-          direction: 'backward' as const,
           reviewCount: 0,
           lastReviewAt: now,
           interval: 7
@@ -464,27 +470,16 @@ export class LearningController {
             attempts: currentWord.attempts + 1
           };
 
-          if (currentWord.direction === 'forward') {
-            return {
-              ...state,
-              reviewQueue: newReviewQueue,
-              forwardQueue: [...state.forwardQueue, queueItem],
-              todayStats: {
-                ...state.todayStats,
-                reviewWords: state.todayStats.reviewWords + 1
-              }
-            };
-          } else {
-            return {
-              ...state,
-              reviewQueue: newReviewQueue,
-              backwardQueue: [...state.backwardQueue, queueItem],
-              todayStats: {
-                ...state.todayStats,
-                reviewWords: state.todayStats.reviewWords + 1
-              }
-            };
-          }
+          // Move back to forward queue by default when failing review
+          return {
+            ...state,
+            reviewQueue: newReviewQueue,
+            forwardQueue: [...state.forwardQueue, queueItem],
+            todayStats: {
+              ...state.todayStats,
+              reviewWords: state.todayStats.reviewWords + 1
+            }
+          };
         }
 
         return {

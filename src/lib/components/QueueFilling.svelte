@@ -1,12 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import FlashCard from './FlashCard.svelte';
+  import { CardDirection } from '$lib/types/learning';
+  import { learningState } from '$lib/controllers/LearningController';
 
   export let word: string = '';
   export let properties: string[] = [];
   export let translations: string[] = [];
   export const totalWords: number = 0;
-  import { learningState } from '$lib/controllers/LearningController';
   export let learnedCount: number = 0;
   export let canSwitchToLearning: boolean = false;
 
@@ -85,7 +86,7 @@
           {word}
           {properties}
           {translations}
-          direction="forward"
+          direction={CardDirection.FORWARD}
           onSwipeRight={handleKnow}
           onSwipeLeft={handleDontKnow}
         />

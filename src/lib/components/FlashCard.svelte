@@ -1,19 +1,20 @@
 <script lang="ts">
+  import { CardDirection } from '$lib/types/learning';
   // Props
   export let word = '';
   export let properties: string[] = [];
   export let translations: string[] = [];
-  export let direction: 'forward' | 'backward' = 'forward';
+  export let direction: CardDirection = CardDirection.FORWARD;
 
   // Callback props instead of event dispatcher
   export let onSwipeRight = () => {};
   export let onSwipeLeft = () => {};
 
   // Determine what to show based on direction
-  $: frontText = direction === 'forward' ? word : translations[0] || '';
-  $: backText = direction === 'forward' ? translations : [word];
-  $: frontLanguage = direction === 'forward' ? 'French' : 'Russian';
-  $: backLanguage = direction === 'forward' ? 'Russian' : 'French';
+  $: frontText = direction === CardDirection.FORWARD ? word : translations[0] || '';
+  $: backText = direction === CardDirection.FORWARD ? translations : [word];
+  $: frontLanguage = direction === CardDirection.FORWARD ? 'French' : 'Russian';
+  $: backLanguage = direction === CardDirection.FORWARD ? 'Russian' : 'French';
 
   // State
   let isFlipped = false;
@@ -22,6 +23,11 @@
   let isSwipingRight = false;
   let isSwipingLeft = false;
   let isSwipingUp = false;
+
+  // Reset flip state when card changes
+  $: if (word || translations || direction) {
+    isFlipped = false;
+  }
 
   function handleTap() {
     isFlipped = !isFlipped;
@@ -124,7 +130,7 @@
     <div class="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-6">
       <h2 class="text-3xl font-bold text-gray-800">{frontText}</h2>
       <div class="mt-2 text-sm text-gray-500">
-        {direction === 'forward' ? properties.join(', ') : 'French word'}
+        {direction === CardDirection.FORWARD ? properties.join(', ') : 'French word'}
       </div>
       <div class="mt-1 text-xs text-blue-500">
         {frontLanguage}
@@ -144,7 +150,7 @@
         {/each}
       </ul>
       <div class="mt-2 text-sm text-gray-500">
-        {direction === 'backward' ? properties.join(', ') : ''}
+        {direction === CardDirection.BACKWARD ? properties.join(', ') : ''}
       </div>
       <div class="mt-1 text-xs text-blue-500">
         {backLanguage}

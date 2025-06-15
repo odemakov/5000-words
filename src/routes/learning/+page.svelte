@@ -20,10 +20,10 @@
     LEARNING_FORWARD,
     ADDING,
     isLearningForwardMode,
-    type LearningMode,
     isLearningBackwardMode,
     isReviewingMode,
-    isAddingMode
+    isAddingMode,
+    type LearningMode
   } from '$lib/constants/modes';
 
   // Reactive data

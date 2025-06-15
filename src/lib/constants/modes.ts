@@ -44,7 +44,7 @@ export function isAddingMode(mode: string): mode is typeof ADDING {
 // Mode display information
 export const MODE_INFO = {
   [LEARNING_FORWARD]: {
-    label: 'Pecepitive',
+    label: 'Receptive',
     fullLabel: 'Learning (French to Russian)',
     icon: 'book'
   },

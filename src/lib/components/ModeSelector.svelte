@@ -16,7 +16,6 @@
 
   export let currentMode: LearningMode;
   export let onModeChange: (mode: LearningMode) => void;
-  export let dueReviewsCount: number = 0;
 
   // Calculate review stats by interval
   $: review7Stats = $learningState.reviewQueue && getReviewsCountByInterval(7);
