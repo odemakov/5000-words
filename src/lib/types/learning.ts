@@ -15,22 +15,14 @@ export interface LearningState {
   forwardQueue: WordInQueue[];
   backwardQueue: WordInQueue[];
 
-  // Spaced repetition queues
-  recap7: RecapWord[];
-  recap14: RecapWord[];
-  recap30: RecapWord[];
+  // Spaced repetition queue with review intervals
+  reviewQueue: ReviewWord[];
 
   // Learned words tracking (just indices)
   learnedList: number[]; // Word indices that are fully learned
 
   // Current app state
-  currentMode:
-    | 'learning-forward'
-    | 'learning-backward'
-    | 'recap7'
-    | 'recap14'
-    | 'recap30'
-    | 'adding';
+  currentMode: 'learning-forward' | 'learning-backward' | 'reviewing' | 'adding';
 
   // Session tracking
   lastActivity: number;
@@ -45,12 +37,13 @@ export interface WordInQueue {
   attempts: number;
 }
 
-// Recap word extends queue item with review-specific data
-export interface RecapWord extends WordInQueue {
+// Review word extends queue item with review-specific data
+export interface ReviewWord extends WordInQueue {
   dueDate: number;
   direction: 'forward' | 'backward';
   reviewCount: number;
   lastReviewAt: number;
+  interval: number; // Current interval in days (7, 14, or 30)
 }
 
 export interface DailyStats {
@@ -70,7 +63,7 @@ export interface CurrentCard {
   direction: 'forward' | 'backward';
   attempts?: number;
   isReview?: boolean;
-  reviewType?: '7' | '14' | '30';
+  reviewInterval?: number; // 7, 14, or 30
 }
 
 // Settings interface

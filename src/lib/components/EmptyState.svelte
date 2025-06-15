@@ -1,33 +1,22 @@
 <script lang="ts">
   import { type LearningMode } from '$lib/constants/modes';
   export let onModeSwitch: (mode: LearningMode) => void;
-  import { learningState } from '$lib/controllers/LearningController';
-  import {
-    LEARNING_FORWARD,
-    LEARNING_BACKWARD,
-    RECAP_7,
-    RECAP_14,
-    RECAP_30
-  } from '$lib/constants/modes';
+  import { learningState, getDueReviewsCount } from '$lib/controllers/LearningController';
+  import { LEARNING_FORWARD, LEARNING_BACKWARD, REVIEWING } from '$lib/constants/modes';
 
   $: canSwitchToForward = $learningState.forwardQueue.length > 0;
   $: canSwitchToBackward = $learningState.backwardQueue.length > 0;
   $: canSwitchToLearning = canSwitchToForward || canSwitchToBackward;
 
-  $: canSwitchToRecap7 = $learningState.forwardQueue.length > 0;
-  $: canSwitchToRecap14 = $learningState.recap14.length > 0;
-  $: canSwitchToRecap30 = $learningState.recap30.length > 0;
-  $: canSwitchToRecap = canSwitchToRecap7 || canSwitchToRecap14 || canSwitchToRecap30;
+  $: dueReviewsCount = $learningState.reviewQueue && getDueReviewsCount();
+  $: canSwitchToReviewing = dueReviewsCount > 0;
 
-  function handleRecapModes() {
-    if (canSwitchToRecap7) {
-      onModeSwitch(RECAP_7);
-    } else if (canSwitchToRecap14) {
-      onModeSwitch(RECAP_14);
-    } else if (canSwitchToRecap30) {
-      onModeSwitch(RECAP_30);
+  function handleReviewMode() {
+    if (canSwitchToReviewing) {
+      onModeSwitch(REVIEWING);
     }
   }
+
   function handleLearningModes() {
     if (canSwitchToForward) {
       onModeSwitch(LEARNING_FORWARD);
@@ -38,7 +27,7 @@
 </script>
 
 <div class="flex flex-col items-center justify-center py-12 text-center">
-  {#if !canSwitchToLearning && !canSwitchToRecap}
+  {#if !canSwitchToLearning && !canSwitchToReviewing}
     <!-- Completed all words -->
     <div
       class="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-blue-500"
@@ -78,20 +67,25 @@
     <p class="mb-4 max-w-md text-gray-600">
       You've worked through all available learning cards. Great progress!
     </p>
-    {#if canSwitchToRecap7}
+    {#if canSwitchToReviewing}
       <button
-        on:click={handleRecapModes}
-        class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
+        on:click={handleReviewMode}
+        class="rounded-md bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
       >
-        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          class="mr-2 inline-block h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        Switch to Reviews
+        Switch to Reviews ({dueReviewsCount} due)
       </button>
     {:else}
       <div class="rounded-lg bg-green-50 p-4">
@@ -101,7 +95,7 @@
         </p>
       </div>
     {/if}
-  {:else if canSwitchToRecap && !canSwitchToLearning}
+  {:else if canSwitchToReviewing && !canSwitchToLearning}
     <!-- No review cards available -->
     <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
       <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,19 +1,15 @@
 <script lang="ts">
-  import { learningState } from '$lib/controllers/LearningController';
+  import { learningState, getReviewsCountByInterval } from '$lib/controllers/LearningController';
   import {
     LEARNING_FORWARD,
     LEARNING_BACKWARD,
-    RECAP_7,
-    RECAP_14,
-    RECAP_30,
+    REVIEWING,
     ADDING,
     MODE_INFO,
     isLearningMode,
     isLearningForwardMode,
     isLearningBackwardMode,
-    isRecap7Mode,
-    isRecap14Mode,
-    isRecap30Mode,
+    isReviewingMode,
     isAddingMode,
     type LearningMode
   } from '$lib/constants/modes';
@@ -22,17 +18,15 @@
   export let onModeChange: (mode: LearningMode) => void;
   export let dueReviewsCount: number = 0;
 
-  // Calculate recap stats
-  $: recap7Stats = getRecapStats($learningState.recap7);
-  $: recap14Stats = getRecapStats($learningState.recap14);
-  $: recap30Stats = getRecapStats($learningState.recap30);
-
-  function getRecapStats(recapArray: Array<{ dueDate: number }>) {
-    const now = Date.now();
-    const ready = recapArray.filter((word) => word.dueDate <= now).length;
-    const notReady = recapArray.length - ready;
-    return { ready, notReady, total: recapArray.length };
-  }
+  // Calculate review stats by interval
+  $: review7Stats = $learningState.reviewQueue && getReviewsCountByInterval(7);
+  $: review14Stats = $learningState.reviewQueue && getReviewsCountByInterval(14);
+  $: review30Stats = $learningState.reviewQueue && getReviewsCountByInterval(30);
+  $: totalReviewStats = {
+    ready: review7Stats.ready + review14Stats.ready + review30Stats.ready,
+    notReady: review7Stats.notReady + review14Stats.notReady + review30Stats.notReady,
+    total: review7Stats.total + review14Stats.total + review30Stats.total
+  };
 
   function getModeStats(mode: LearningMode): { available: number; total: number } {
     switch (mode) {
@@ -46,12 +40,8 @@
           available: $learningState.backwardQueue.length,
           total: $learningState.backwardQueue.length
         };
-      case RECAP_7:
-        return { available: recap7Stats.ready, total: recap7Stats.total };
-      case RECAP_14:
-        return { available: recap14Stats.ready, total: recap14Stats.total };
-      case RECAP_30:
-        return { available: recap30Stats.ready, total: recap30Stats.total };
+      case REVIEWING:
+        return { available: totalReviewStats.ready, total: totalReviewStats.total };
       default:
         return { available: 0, total: 0 };
     }
@@ -133,15 +123,15 @@
 
     <button
       class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-      class:bg-yellow-500={isRecap7Mode(currentMode)}
-      class:text-white={isRecap7Mode(currentMode)}
-      class:shadow-sm={isRecap7Mode(currentMode)}
-      class:text-gray-600={!isRecap7Mode(currentMode)}
-      class:hover:bg-gray-50={!isRecap7Mode(currentMode) && isModeAvailable(RECAP_7)}
-      class:opacity-50={!isModeAvailable(RECAP_7)}
-      class:cursor-not-allowed={!isModeAvailable(RECAP_7)}
-      disabled={!isModeAvailable(RECAP_7)}
-      on:click={() => handleModeClick(RECAP_7)}
+      class:bg-yellow-500={isReviewingMode(currentMode)}
+      class:text-white={isReviewingMode(currentMode)}
+      class:shadow-sm={isReviewingMode(currentMode)}
+      class:text-gray-600={!isReviewingMode(currentMode)}
+      class:hover:bg-gray-50={!isReviewingMode(currentMode) && isModeAvailable(REVIEWING)}
+      class:opacity-50={!isModeAvailable(REVIEWING)}
+      class:cursor-not-allowed={!isModeAvailable(REVIEWING)}
+      disabled={!isModeAvailable(REVIEWING)}
+      on:click={() => handleModeClick(REVIEWING)}
     >
       <div class="flex flex-col items-center">
         <svg class="mb-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,73 +142,11 @@
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        <span>{MODE_INFO[RECAP_7].label}</span>
+        <span>{MODE_INFO[REVIEWING].label}</span>
         <div class="text-xs">
-          <span class="text-green-600">{recap7Stats.ready}</span>
-          {#if recap7Stats.notReady > 0}
-            <span class="text-gray-400">/{recap7Stats.total}</span>
-          {/if}
-        </div>
-      </div>
-    </button>
-
-    <button
-      class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-      class:bg-orange-500={isRecap14Mode(currentMode)}
-      class:text-white={isRecap14Mode(currentMode)}
-      class:shadow-sm={isRecap14Mode(currentMode)}
-      class:text-gray-600={!isRecap14Mode(currentMode)}
-      class:hover:bg-gray-50={!isRecap14Mode(currentMode) && isModeAvailable(RECAP_14)}
-      class:opacity-50={!isModeAvailable(RECAP_14)}
-      class:cursor-not-allowed={!isModeAvailable(RECAP_14)}
-      disabled={!isModeAvailable(RECAP_14)}
-      on:click={() => handleModeClick(RECAP_14)}
-    >
-      <div class="flex flex-col items-center">
-        <svg class="mb-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>{MODE_INFO[RECAP_14].label}</span>
-        <div class="text-xs">
-          <span class="text-green-600">{recap14Stats.ready}</span>
-          {#if recap14Stats.notReady > 0}
-            <span class="text-gray-400">/{recap14Stats.total}</span>
-          {/if}
-        </div>
-      </div>
-    </button>
-
-    <button
-      class="flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200"
-      class:bg-green-500={isRecap30Mode(currentMode)}
-      class:text-white={isRecap30Mode(currentMode)}
-      class:shadow-sm={isRecap30Mode(currentMode)}
-      class:text-gray-600={!isRecap30Mode(currentMode)}
-      class:hover:bg-gray-50={!isRecap30Mode(currentMode) && isModeAvailable(RECAP_30)}
-      class:opacity-50={!isModeAvailable(RECAP_30)}
-      class:cursor-not-allowed={!isModeAvailable(RECAP_30)}
-      disabled={!isModeAvailable(RECAP_30)}
-      on:click={() => handleModeClick(RECAP_30)}
-    >
-      <div class="flex flex-col items-center">
-        <svg class="mb-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <span>{MODE_INFO[RECAP_30].label}</span>
-        <div class="text-xs">
-          <span class="text-green-600">{recap30Stats.ready}</span>
-          {#if recap30Stats.notReady > 0}
-            <span class="text-gray-400">/{recap30Stats.total}</span>
+          <span class="text-green-600">{totalReviewStats.ready}</span>
+          {#if totalReviewStats.notReady > 0}
+            <span class="text-gray-400">/{totalReviewStats.total}</span>
           {/if}
         </div>
       </div>
@@ -257,16 +185,58 @@
   </div>
 {/if}
 
-{#if isLearningMode(currentMode) && dueReviewsCount > 0}
-  <div class="mb-4 flex items-center justify-center rounded-md bg-red-50 py-2">
-    <svg class="mr-2 h-4 w-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-      />
-    </svg>
-    <span class="text-sm text-red-700">{dueReviewsCount} reviews are due</span>
+{#if isLearningMode(currentMode) && totalReviewStats.ready > 0}
+  <div class="mb-4 rounded-md bg-yellow-50 p-3">
+    <div class="flex items-center justify-center">
+      <svg
+        class="mr-2 h-4 w-4 text-yellow-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+        />
+      </svg>
+      <span class="text-sm text-yellow-700">{totalReviewStats.ready} reviews are due</span>
+    </div>
+    {#if review7Stats.ready > 0 || review14Stats.ready > 0 || review30Stats.ready > 0}
+      <div class="mt-2 flex justify-center space-x-3 text-xs text-yellow-600">
+        {#if review7Stats.ready > 0}
+          <span>7-day: {review7Stats.ready}</span>
+        {/if}
+        {#if review14Stats.ready > 0}
+          <span>14-day: {review14Stats.ready}</span>
+        {/if}
+        {#if review30Stats.ready > 0}
+          <span>30-day: {review30Stats.ready}</span>
+        {/if}
+      </div>
+    {/if}
+  </div>
+{/if}
+
+{#if isReviewingMode(currentMode) && totalReviewStats.total > 0}
+  <div class="mb-4 rounded-lg bg-gray-50 p-3">
+    <div class="text-center text-sm text-gray-600">
+      <div class="font-medium">Review Progress</div>
+      <div class="mt-1 grid grid-cols-3 gap-2 text-xs">
+        <div>
+          <div class="font-medium">7-day</div>
+          <div>{review7Stats.ready}/{review7Stats.total}</div>
+        </div>
+        <div>
+          <div class="font-medium">14-day</div>
+          <div>{review14Stats.ready}/{review14Stats.total}</div>
+        </div>
+        <div>
+          <div class="font-medium">30-day</div>
+          <div>{review30Stats.ready}/{review30Stats.total}</div>
+        </div>
+      </div>
+    </div>
   </div>
 {/if}

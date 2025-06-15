@@ -4,12 +4,11 @@
     LearningController,
     currentCard,
     learningState,
-    getDueRecap7Count,
-    getDueRecap14Count,
-    getDueRecap30Count,
+    getDueReviewsCount,
     getLearningForwardCount,
     getLearningBackwardCount
   } from '$lib/controllers/LearningController';
+  import { MODE_INFO } from '$lib/constants/modes';
   import FlashCard from '$lib/components/FlashCard.svelte';
   import ModeSelector from '$lib/components/ModeSelector.svelte';
   import ProgressHeader from '$lib/components/ProgressHeader.svelte';
@@ -23,9 +22,7 @@
     isLearningForwardMode,
     type LearningMode,
     isLearningBackwardMode,
-    isRecap7Mode,
-    isRecap14Mode,
-    isRecap30Mode,
+    isReviewingMode,
     isAddingMode
   } from '$lib/constants/modes';
 
@@ -37,9 +34,7 @@
   $: shouldShowEmptyState = (() => {
     if (isLearningForwardMode(state.currentMode) && state.forwardQueue.length === 0) return true;
     if (isLearningBackwardMode(state.currentMode) && state.backwardQueue.length === 0) return true;
-    if (isRecap7Mode(state.currentMode) && state.backwardQueue.length === 0) return true;
-    if (isRecap14Mode(state.currentMode) && state.backwardQueue.length === 0) return true;
-    if (isRecap30Mode(state.currentMode) && state.backwardQueue.length === 0) return true;
+    if (isReviewingMode(state.currentMode) && getDueReviewsCount() === 0) return true;
     if (isAddingMode(state.currentMode) && state.backwardQueue.length === 0) return true;
 
     return false;
@@ -75,13 +70,7 @@
 
   function handleModeSwitch(mode: LearningMode) {
     // Check if mode switch is allowed
-    if (isRecap7Mode(mode) && getDueRecap7Count() === 0) {
-      return; // Mode selector should handle disabled state
-    }
-    if (isRecap14Mode(mode) && getDueRecap14Count() === 0) {
-      return; // Mode selector should handle disabled state
-    }
-    if (isRecap30Mode(mode) && getDueRecap30Count() === 0) {
+    if (isReviewingMode(mode) && getDueReviewsCount() === 0) {
       return; // Mode selector should handle disabled state
     }
     if (isLearningForwardMode(mode) && getLearningForwardCount() === 0) {
@@ -272,10 +261,10 @@
             </svg>
           </div>
           <h3 class="mb-2 text-xl font-bold text-gray-900">
-            {isLearningForwardMode(state.currentMode) ? 'Forward' : 'Backward'} deck is empty
+            {MODE_INFO[state.currentMode].label} queue is empty
           </h3>
           <p class="mb-4 max-w-md text-gray-600">
-            Try other decks or add new words to continue learning.
+            Try other queues or add new words to Receptive queue.
           </p>
         </div>
       {:else if card}
@@ -293,14 +282,14 @@
             <div class="mt-2 text-center">
               <span
                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                class:bg-yellow-100={card.reviewType === '7'}
-                class:text-yellow-800={card.reviewType === '7'}
-                class:bg-orange-100={card.reviewType === '14'}
-                class:text-orange-800={card.reviewType === '14'}
-                class:bg-green-100={card.reviewType === '30'}
-                class:text-green-800={card.reviewType === '30'}
+                class:bg-yellow-100={card.reviewInterval === 7}
+                class:text-yellow-800={card.reviewInterval === 7}
+                class:bg-orange-100={card.reviewInterval === 14}
+                class:text-orange-800={card.reviewInterval === 14}
+                class:bg-green-100={card.reviewInterval === 30}
+                class:text-green-800={card.reviewInterval === 30}
               >
-                {card.reviewType}-day review
+                {card.reviewInterval}-day review
               </span>
             </div>
           {/if}

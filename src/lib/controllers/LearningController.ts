@@ -1,21 +1,18 @@
-import { derived, get, writable } from 'svelte/store';
 import {
   LEVEL_A1,
   LEVEL_A2,
   LEVEL_B1,
   LEVEL_B2,
-  RECAP_14,
-  RECAP_30,
-  RECAP_7,
   isLearningBackwardMode,
   isLearningForwardMode,
   isLearningMode,
-  isRecapMode,
+  isReviewingMode,
   type LearningMode,
   type Level
-} from '../constants/modes';
+} from '$lib/constants/modes';
+import type { CurrentCard, LearningState, ReviewWord, WordInQueue } from '$lib/types/learning';
+import { derived, get, writable } from 'svelte/store';
 import { Storage, type WordData } from '../storage.js';
-import type { CurrentCard, LearningState, RecapWord, WordInQueue } from '../types/learning.js';
 
 // Initialize default learning state
 const createDefaultState = (): LearningState => ({
@@ -26,9 +23,7 @@ const createDefaultState = (): LearningState => ({
   wordsReviewed: 0,
   forwardQueue: [],
   backwardQueue: [],
-  recap7: [],
-  recap14: [],
-  recap30: [],
+  reviewQueue: [],
   learnedList: [],
   currentMode: 'learning-forward',
   lastActivity: Date.now(),
@@ -55,16 +50,21 @@ function getWordsData(): WordData[] {
   return wordsCache;
 }
 
-function getWordByIndex(index: number): WordData | null {
+export function getWordByIndex(index: number): WordData | null {
   const words = getWordsData();
   return words[index] || null;
+}
+
+// Clear the words cache (for testing)
+export function clearWordsCache(): void {
+  wordsCache = null;
 }
 
 // Derived store for current card with full word data
 export const currentCard = derived<typeof learningState, CurrentCard | null>(
   learningState,
   ($state) => {
-    const { currentMode, forwardQueue, backwardQueue, recap7, recap14, recap30 } = $state;
+    const { currentMode, forwardQueue, backwardQueue, reviewQueue } = $state;
 
     if (isLearningMode(currentMode)) {
       // Learning mode - handle forward and backward queues
@@ -95,25 +95,12 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
           };
         }
       }
-    } else if (isRecapMode(currentMode)) {
-      // Recap mode - show due words from specific recap queue
+    } else if (isReviewingMode(currentMode)) {
+      // Review mode - show due words from review queue
       const now = Date.now();
-      let recapQueue: RecapWord[] = [];
-      let reviewType: '7' | '14' | '30' = '7';
 
-      if (currentMode === RECAP_7) {
-        recapQueue = recap7;
-        reviewType = '7';
-      } else if (currentMode === RECAP_14) {
-        recapQueue = recap14;
-        reviewType = '14';
-      } else if (currentMode === RECAP_30) {
-        recapQueue = recap30;
-        reviewType = '30';
-      }
-
-      // Get due words from the specific recap queue
-      const dueWords = recapQueue
+      // Get due words from the review queue
+      const dueWords = reviewQueue
         .filter((word) => word.dueDate <= now)
         .sort((a, b) => a.dueDate - b.dueDate);
 
@@ -129,13 +116,10 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             direction: reviewItem.direction,
             attempts: reviewItem.attempts,
             isReview: true,
-            reviewType
+            reviewInterval: reviewItem.interval
           };
         }
       }
-      // } else if (isRecapMode(currentMode)) {
-      //   // Reviews mode - prioritize oldest due words from all recap queues
-      //   const allDueWords = [...recap7, ...recap14, ...recap30]
       //     .filter((word) => word.dueDate <= Date.now())
       //     .sort((a, b) => a.dueDate - b.dueDate);
 
@@ -168,24 +152,24 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
 
 // Derived store for queue statistics
 // Helper function to get due reviews count
-export function getDueRecap7Count(): number {
+export function getDueReviewsCount(): number {
   const state = get(learningState);
   const now = Date.now();
-  return state.recap7.filter((word) => word.dueDate <= now).length;
+  return state.reviewQueue.filter((word) => word.dueDate <= now).length;
 }
 
-// Helper function to get due recap14 count
-export function getDueRecap14Count(): number {
+// Helper function to get reviews count by interval
+export function getReviewsCountByInterval(interval: number): {
+  ready: number;
+  notReady: number;
+  total: number;
+} {
   const state = get(learningState);
   const now = Date.now();
-  return state.recap14.filter((word) => word.dueDate <= now).length;
-}
-
-// Helper function to get due recap30 count
-export function getDueRecap30Count(): number {
-  const state = get(learningState);
-  const now = Date.now();
-  return state.recap30.filter((word) => word.dueDate <= now).length;
+  const wordsAtInterval = state.reviewQueue.filter((word) => word.interval === interval);
+  const ready = wordsAtInterval.filter((word) => word.dueDate <= now).length;
+  const notReady = wordsAtInterval.length - ready;
+  return { ready, notReady, total: wordsAtInterval.length };
 }
 
 export function getLearningForwardCount(): number {
@@ -264,7 +248,7 @@ export class LearningController {
       this.processForwardQueueResponse(card, known);
     } else if (isLearningBackwardMode(state.currentMode)) {
       this.processBackwardQueueResponse(card, known);
-    } else if (isRecapMode(state.currentMode)) {
+    } else if (isReviewingMode(state.currentMode)) {
       this.processReviewResponse(card, known);
     }
 
@@ -337,27 +321,26 @@ export class LearningController {
 
   static processBackwardQueueResponse(card: CurrentCard, known: boolean) {
     learningState.update((state) => {
-      const newBackwardQueue = state.backwardQueue.slice(1); // Remove current card
       const now = Date.now();
+      const newBackwardQueue = state.backwardQueue.slice(1);
 
       if (known) {
-        // Move to recap7 with 7-day due date
-        const recapItem: RecapWord = {
+        // Move to review queue with 7-day interval
+        const reviewItem: ReviewWord = {
           wordIndex: card.wordIndex,
-          addedAt: card.attempts
-            ? state.forwardQueue.find((w) => w.wordIndex === card.wordIndex)?.addedAt || now
-            : now,
-          attempts: (card.attempts || 0) + 1,
+          addedAt: state.backwardQueue.find((w) => w.wordIndex === card.wordIndex)?.addedAt || now,
+          attempts: card.attempts || 0,
           dueDate: now + 7 * 24 * 60 * 60 * 1000, // 7 days from now
-          direction: 'forward', // Default direction for first review
-          reviewCount: 1,
-          lastReviewAt: now
+          direction: 'backward' as const,
+          reviewCount: 0,
+          lastReviewAt: now,
+          interval: 7
         };
 
         return {
           ...state,
           backwardQueue: newBackwardQueue,
-          recap7: [...state.recap7, recapItem],
+          reviewQueue: [...state.reviewQueue, reviewItem],
           wordsLearned: state.wordsLearned + 1,
           todayStats: {
             ...state.todayStats,
@@ -400,47 +383,51 @@ export class LearningController {
       const now = Date.now();
       const wordIndex = card.wordIndex;
 
-      // Remove from current recap queue
-      const newRecap7 = state.recap7.filter((w) => w.wordIndex !== wordIndex);
-      const newRecap14 = state.recap14.filter((w) => w.wordIndex !== wordIndex);
-      const newRecap30 = state.recap30.filter((w) => w.wordIndex !== wordIndex);
+      // Find and remove from review queue
+      const currentWord = state.reviewQueue.find((w) => w.wordIndex === wordIndex);
+      const newReviewQueue = state.reviewQueue.filter((w) => w.wordIndex !== wordIndex);
+
+      if (!currentWord) return state;
 
       if (known) {
-        // Promote to next level or mark as learned
-        if (card.reviewType === '7') {
-          // Move to recap14
-          const currentWord = state.recap7.find((w) => w.wordIndex === wordIndex);
-          if (currentWord) {
-            const recap14Item: RecapWord = {
-              ...currentWord,
-              dueDate: now + 14 * 24 * 60 * 60 * 1000,
-              reviewCount: currentWord.reviewCount + 1,
-              lastReviewAt: now
-            };
-            newRecap14.push(recap14Item);
-          }
-        } else if (card.reviewType === '14') {
-          // Move to recap30
-          const currentWord = state.recap14.find((w) => w.wordIndex === wordIndex);
-          if (currentWord) {
-            const recap30Item: RecapWord = {
-              ...currentWord,
-              dueDate: now + 30 * 24 * 60 * 60 * 1000,
-              reviewCount: currentWord.reviewCount + 1,
-              lastReviewAt: now
-            };
-            newRecap30.push(recap30Item);
-          }
-        } else if (card.reviewType === '30') {
+        // Promote to next interval or mark as learned
+        if (currentWord.interval === 7) {
+          // Move to 14-day interval
+          const updatedReviewItem: ReviewWord = {
+            ...currentWord,
+            dueDate: now + 14 * 24 * 60 * 60 * 1000,
+            reviewCount: currentWord.reviewCount + 1,
+            lastReviewAt: now,
+            interval: 14
+          };
+          newReviewQueue.push(updatedReviewItem);
+        } else if (currentWord.interval === 14) {
+          // Move to 30-day interval
+          const updatedReviewItem: ReviewWord = {
+            ...currentWord,
+            dueDate: now + 30 * 24 * 60 * 60 * 1000,
+            reviewCount: currentWord.reviewCount + 1,
+            lastReviewAt: now,
+            interval: 30
+          };
+          newReviewQueue.push(updatedReviewItem);
+        } else if (currentWord.interval === 30) {
           // Move to learned list
-          state.learnedList.push(wordIndex);
+          return {
+            ...state,
+            reviewQueue: newReviewQueue,
+            learnedList: [...state.learnedList, wordIndex],
+            wordsReviewed: state.wordsReviewed + 1,
+            todayStats: {
+              ...state.todayStats,
+              reviewWords: state.todayStats.reviewWords + 1
+            }
+          };
         }
 
         return {
           ...state,
-          recap7: newRecap7,
-          recap14: newRecap14,
-          recap30: newRecap30,
+          reviewQueue: newReviewQueue,
           wordsReviewed: state.wordsReviewed + 1,
           todayStats: {
             ...state.todayStats,
@@ -449,53 +436,60 @@ export class LearningController {
         };
       } else {
         // Demote or return to learning
-        if (card.reviewType === '30') {
-          // Move back to recap14
-          const currentWord = state.recap30.find((w) => w.wordIndex === wordIndex);
-          if (currentWord) {
-            const recap14Item: RecapWord = {
-              ...currentWord,
-              dueDate: now + 14 * 24 * 60 * 60 * 1000,
-              reviewCount: currentWord.reviewCount + 1,
-              lastReviewAt: now
-            };
-            newRecap14.push(recap14Item);
-          }
-        } else if (card.reviewType === '14') {
-          // Move back to recap7
-          const currentWord = state.recap14.find((w) => w.wordIndex === wordIndex);
-          if (currentWord) {
-            const recap7Item: RecapWord = {
-              ...currentWord,
-              dueDate: now + 7 * 24 * 60 * 60 * 1000,
-              reviewCount: currentWord.reviewCount + 1,
-              lastReviewAt: now
-            };
-            newRecap7.push(recap7Item);
-          }
+        if (currentWord.interval === 30) {
+          // Move back to 14-day interval
+          const updatedReviewItem: ReviewWord = {
+            ...currentWord,
+            dueDate: now + 14 * 24 * 60 * 60 * 1000,
+            reviewCount: currentWord.reviewCount + 1,
+            lastReviewAt: now,
+            interval: 14
+          };
+          newReviewQueue.push(updatedReviewItem);
+        } else if (currentWord.interval === 14) {
+          // Move back to 7-day interval
+          const updatedReviewItem: ReviewWord = {
+            ...currentWord,
+            dueDate: now + 7 * 24 * 60 * 60 * 1000,
+            reviewCount: currentWord.reviewCount + 1,
+            lastReviewAt: now,
+            interval: 7
+          };
+          newReviewQueue.push(updatedReviewItem);
         } else {
           // Move back to appropriate learning queue
-          const currentWord = state.recap7.find((w) => w.wordIndex === wordIndex);
-          if (currentWord) {
-            const queueItem: WordInQueue = {
-              wordIndex: currentWord.wordIndex,
-              addedAt: now,
-              attempts: currentWord.attempts + 1
-            };
+          const queueItem: WordInQueue = {
+            wordIndex: currentWord.wordIndex,
+            addedAt: now,
+            attempts: currentWord.attempts + 1
+          };
 
-            if (currentWord.direction === 'forward') {
-              state.forwardQueue.push(queueItem);
-            } else {
-              state.backwardQueue.push(queueItem);
-            }
+          if (currentWord.direction === 'forward') {
+            return {
+              ...state,
+              reviewQueue: newReviewQueue,
+              forwardQueue: [...state.forwardQueue, queueItem],
+              todayStats: {
+                ...state.todayStats,
+                reviewWords: state.todayStats.reviewWords + 1
+              }
+            };
+          } else {
+            return {
+              ...state,
+              reviewQueue: newReviewQueue,
+              backwardQueue: [...state.backwardQueue, queueItem],
+              todayStats: {
+                ...state.todayStats,
+                reviewWords: state.todayStats.reviewWords + 1
+              }
+            };
           }
         }
 
         return {
           ...state,
-          recap7: newRecap7,
-          recap14: newRecap14,
-          recap30: newRecap30,
+          reviewQueue: newReviewQueue,
           todayStats: {
             ...state.todayStats,
             reviewWords: state.todayStats.reviewWords + 1
@@ -577,9 +571,7 @@ export class LearningController {
     const allUsedIndices = new Set([
       ...state.forwardQueue.map((w) => w.wordIndex),
       ...state.backwardQueue.map((w) => w.wordIndex),
-      ...state.recap7.map((w) => w.wordIndex),
-      ...state.recap14.map((w) => w.wordIndex),
-      ...state.recap30.map((w) => w.wordIndex),
+      ...state.reviewQueue.map((w) => w.wordIndex),
       ...state.learnedList
     ]);
 
