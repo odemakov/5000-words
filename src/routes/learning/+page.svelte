@@ -25,6 +25,7 @@
     isAddingMode,
     type LearningMode
   } from '$lib/constants/modes';
+  import { POOLS } from '$lib/constants/review';
 
   // Reactive data
   $: card = $currentCard;
@@ -282,14 +283,14 @@
             <div class="mt-2 text-center">
               <span
                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                class:bg-yellow-100={card.reviewInterval === 7}
-                class:text-yellow-800={card.reviewInterval === 7}
-                class:bg-orange-100={card.reviewInterval === 14}
-                class:text-orange-800={card.reviewInterval === 14}
-                class:bg-green-100={card.reviewInterval === 30}
-                class:text-green-800={card.reviewInterval === 30}
+                class:bg-yellow-100={card.reviewPool === POOLS.POOL1}
+                class:text-yellow-800={card.reviewPool === POOLS.POOL1}
+                class:bg-orange-100={card.reviewPool === POOLS.POOL2}
+                class:text-orange-800={card.reviewPool === POOLS.POOL2}
+                class:bg-green-100={card.reviewPool === POOLS.POOL3}
+                class:text-green-800={card.reviewPool === POOLS.POOL3}
               >
-                {card.reviewInterval}-day review
+                {card.reviewPool} review
               </span>
             </div>
           {/if}

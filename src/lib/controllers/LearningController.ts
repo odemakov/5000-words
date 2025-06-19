@@ -1,15 +1,22 @@
 import {
-  LEVEL_A1,
-  LEVEL_A2,
-  LEVEL_B1,
-  LEVEL_B2,
   isLearningBackwardMode,
   isLearningForwardMode,
   isLearningMode,
   isReviewingMode,
+  LEVEL_A1,
+  LEVEL_A2,
+  LEVEL_B1,
+  LEVEL_B2,
   type LearningMode,
   type Level
 } from '$lib/constants/modes';
+import {
+  getNextPool,
+  getPoolIntervalMs,
+  getPreviousPool,
+  POOLS,
+  type ReviewPool
+} from '$lib/constants/review';
 import {
   CardDirection,
   type CurrentCard,
@@ -122,34 +129,10 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
             direction: Math.random() < 0.5 ? CardDirection.FORWARD : CardDirection.BACKWARD,
             attempts: reviewItem.attempts,
             isReview: true,
-            reviewInterval: reviewItem.interval
+            reviewPool: reviewItem.pool
           };
         }
       }
-      //     .filter((word) => word.dueDate <= Date.now())
-      //     .sort((a, b) => a.dueDate - b.dueDate);
-
-      //   if (allDueWords.length > 0) {
-      //     const reviewItem = allDueWords[0];
-      //     const wordData = getWordByIndex(reviewItem.wordIndex);
-      //     if (wordData) {
-      //       // Determine review type
-      //       let reviewType: '7' | '14' | '30' = '7';
-      //       if (recap30.some((w) => w.wordIndex === reviewItem.wordIndex)) reviewType = '30';
-      //       else if (recap14.some((w) => w.wordIndex === reviewItem.wordIndex)) reviewType = '14';
-
-      //       return {
-      //         wordIndex: reviewItem.wordIndex,
-      //         word: wordData.word,
-      //         props: wordData.props,
-      //         translations: wordData.translations,
-      //         direction: reviewItem.direction,
-      //         attempts: reviewItem.attempts,
-      //         isReview: true,
-      //         reviewType
-      //       };
-      //     }
-      //   }
     }
 
     return null;
@@ -165,17 +148,17 @@ export function getDueReviewsCount(): number {
 }
 
 // Helper function to get reviews count by interval
-export function getReviewsCountByInterval(interval: number): {
+export function getReviewsCountByPool(pool: ReviewPool): {
   ready: number;
   notReady: number;
   total: number;
 } {
   const state = get(learningState);
   const now = Date.now();
-  const wordsAtInterval = state.reviewQueue.filter((word) => word.interval === interval);
-  const ready = wordsAtInterval.filter((word) => word.dueDate <= now).length;
-  const notReady = wordsAtInterval.length - ready;
-  return { ready, notReady, total: wordsAtInterval.length };
+  const wordsInPool = state.reviewQueue.filter((word) => word.pool === pool);
+  const ready = wordsInPool.filter((word) => word.dueDate <= now).length;
+  const notReady = wordsInPool.length - ready;
+  return { ready, notReady, total: wordsInPool.length };
 }
 
 export function getLearningForwardCount(): number {
@@ -331,15 +314,14 @@ export class LearningController {
       const newBackwardQueue = state.backwardQueue.slice(1);
 
       if (known) {
-        // Move to review queue with 7-day interval
+        // Move to review queue with POOL1
         // Cards from backward queue should be reviewed in backward direction
         const reviewItem: ReviewWord = {
           wordIndex: card.wordIndex,
           addedAt: state.backwardQueue.find((w) => w.wordIndex === card.wordIndex)?.addedAt || now,
           attempts: card.attempts || 0,
-          dueDate: now + 7 * 24 * 60 * 60 * 1000, // 7 days from now
-          reviewCount: 0,
-          interval: 7
+          dueDate: now + getPoolIntervalMs(POOLS.POOL1),
+          pool: POOLS.POOL1
         };
 
         return {
@@ -395,27 +377,19 @@ export class LearningController {
       if (!currentWord) return state;
 
       if (known) {
-        // Promote to next interval or mark as learned
-        if (currentWord.interval === 7) {
-          // Move to 14-day interval
+        // Promote to next pool or mark as learned
+        const nextPool = getNextPool(currentWord.pool);
+
+        if (nextPool) {
+          // Move to next pool
           const updatedReviewItem: ReviewWord = {
             ...currentWord,
-            dueDate: now + 14 * 24 * 60 * 60 * 1000,
-            reviewCount: currentWord.reviewCount + 1,
-            interval: 14
+            dueDate: now + getPoolIntervalMs(nextPool),
+            pool: nextPool
           };
           newReviewQueue.push(updatedReviewItem);
-        } else if (currentWord.interval === 14) {
-          // Move to 30-day interval
-          const updatedReviewItem: ReviewWord = {
-            ...currentWord,
-            dueDate: now + 30 * 24 * 60 * 60 * 1000,
-            reviewCount: currentWord.reviewCount + 1,
-            interval: 30
-          };
-          newReviewQueue.push(updatedReviewItem);
-        } else if (currentWord.interval === 30) {
-          // Move to learned list
+        } else {
+          // Already in POOL3, move to learned list
           return {
             ...state,
             reviewQueue: newReviewQueue,
@@ -439,26 +413,18 @@ export class LearningController {
         };
       } else {
         // Demote or return to learning
-        if (currentWord.interval === 30) {
-          // Move back to 14-day interval
+        const previousPool = getPreviousPool(currentWord.pool);
+
+        if (previousPool) {
+          // Move back to previous pool
           const updatedReviewItem: ReviewWord = {
             ...currentWord,
-            dueDate: now + 14 * 24 * 60 * 60 * 1000,
-            reviewCount: currentWord.reviewCount + 1,
-            interval: 14
-          };
-          newReviewQueue.push(updatedReviewItem);
-        } else if (currentWord.interval === 14) {
-          // Move back to 7-day interval
-          const updatedReviewItem: ReviewWord = {
-            ...currentWord,
-            dueDate: now + 7 * 24 * 60 * 60 * 1000,
-            reviewCount: currentWord.reviewCount + 1,
-            interval: 7
+            dueDate: now + getPoolIntervalMs(previousPool),
+            pool: previousPool
           };
           newReviewQueue.push(updatedReviewItem);
         } else {
-          // Move back to appropriate learning queue
+          // Already in POOL1, move back to appropriate learning queue
           const queueItem: WordInQueue = {
             wordIndex: currentWord.wordIndex,
             addedAt: now,

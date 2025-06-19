@@ -7,7 +7,7 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 ## 🎯 Core Learning System
 
 ### Spaced Repetition Algorithm
-- **Three-tier review system**: 7-day, 14-day, and 30-day intervals
+- **Three-tier review system**: Pool-based system with configurable intervals
 - **Adaptive scheduling**: Words move between tiers based on user performance
 - **Forgetting curve optimization**: Reviews scheduled at optimal intervals for retention
 
@@ -40,7 +40,7 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 
 #### Queue Statistics Dashboard
 - **Learning mode stats**: Forward/Backward queue counts with direction indicator
-- **Review mode stats**: Due reviews count with breakdown by tier (7/14/30 days)
+- **Review mode stats**: Due reviews count with breakdown by pool (Pool 1/2/3)
 - **Visual progress indicators** with color-coded review tiers
 - **Alert notifications** when reviews are overdue
 
@@ -53,9 +53,9 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 - **Properties display**: Grammatical information adapted to direction
 
 #### Review Indicators
-- **Review tier badges**: Visual indicators for 7/14/30-day reviews
-- **Color-coded system**: Yellow (7-day), Orange (14-day), Green (30-day)
-- **Progress tracking**: Shows which tier each review card belongs to
+- **Review pool badges**: Visual indicators for review pools
+- **Color-coded system**: Yellow (Pool 1), Orange (Pool 2), Green (Pool 3)
+- **Progress tracking**: Shows which pool each review card belongs to
 
 ### 3. Comprehensive Settings Panel
 
@@ -90,9 +90,9 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 #### Adaptive Response Processing
 - **Forward queue success**: Moves to backward queue for bidirectional learning
 - **Forward queue failure**: Reinserts at position 10-30 for spaced repetition
-- **Backward queue success**: Graduates to 7-day review queue
-- **Review promotion**: 7-day → 14-day → 30-day → Fully learned
-- **Review demotion**: Failed reviews move back to previous tier or learning queues
+- **Backward queue success**: Graduates to Pool 1 review queue
+- **Review promotion**: Pool 1 → Pool 2 → Pool 3 → Fully learned
+- **Review demotion**: Failed reviews move back to previous pool or learning queues
 
 #### Level-Based Progression
 - **A1 Level**: Words 1-800 (Beginner)
@@ -131,10 +131,9 @@ interface WordInQueue {
   attempts: number;     // Learning progress tracking
 }
 
-interface RecapWord extends WordInQueue {
+interface ReviewWord extends WordInQueue {
   dueDate: number;           // Next review date
-  direction: 'forward' | 'backward';  // Review direction
-  reviewCount: number;       // Total reviews completed
+  pool: 'POOL1' | 'POOL2' | 'POOL3';  // Current review pool
 }
 ```
 
@@ -203,7 +202,7 @@ interface RecapWord extends WordInQueue {
 - **Green**: Success, known words, positive actions
 - **Red**: Failure, unknown words, warnings
 - **Blue**: Primary actions, learning mode, navigation
-- **Yellow/Orange/Green**: Review tiers (7/14/30 days)
+- **Yellow/Orange/Green**: Review pools (Pool 1/2/3)
 
 ### Typography
 - **Responsive fonts**: Scales appropriately across devices

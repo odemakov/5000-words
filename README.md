@@ -6,7 +6,7 @@ Yet another app nobody cares about. App helps me learn French words.
 
 ### Core Learning System
 - **Level Detection**: Test your starting level (A1-B2)
-- **Spaced Repetition**: Review scheduling with 7/14/30-day intervals
+- **Spaced Repetition**: Review scheduling with configurable pool-based intervals
 - **Bidirectional Learning**: Master both way translations
 - **Progress Tracking**: Real-time statistics and learning analytics
 
@@ -58,7 +58,7 @@ npm run dev
 
 ### Spaced Repetition Algorithm
 ```
-New Word → Forward Queue → Backward Queue → 7-day Review → 14-day Review → 30-day Review → Mastered
+New Word → Forward Queue → Backward Queue → Pool 1 Review → Pool 2 Review → Pool 3 Review → Mastered
 ```
 
 ### Learning Modes
@@ -83,9 +83,7 @@ interface LearningState {
   wordsLearned: number;       // Total mastered words
   forwardQueue: WordInQueue[]; // French → Russian
   backwardQueue: WordInQueue[]; // Russian → French
-  recap7: RecapWord[];        // 7-day reviews
-  recap14: RecapWord[];       // 14-day reviews
-  recap30: RecapWord[];       // 30-day reviews
+  reviewQueue: ReviewWord[];  // Pool-based review system
   learnedList: number[];      // Fully mastered word indices
   currentMode: 'learning-forward' | 'learning-backward' | 'reviews';
   todayStats: DailyStats;     // Session analytics

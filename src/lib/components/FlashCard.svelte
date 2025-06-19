@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { CardDirection } from '$lib/types/learning';
   // Props
   export let word = '';
@@ -28,6 +29,10 @@
   $: if (word || translations || direction) {
     isFlipped = false;
   }
+
+  onMount(async () => {
+    console.log(isFlipped);
+  });
 
   function handleTap() {
     isFlipped = !isFlipped;
@@ -130,7 +135,7 @@
     <div class="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white p-6">
       <h2 class="text-3xl font-bold text-gray-800">{frontText}</h2>
       <div class="mt-2 text-sm text-gray-500">
-        {direction === CardDirection.FORWARD ? properties.join(', ') : 'French word'}
+        {properties.join(', ')}
       </div>
       <div class="mt-1 text-xs text-blue-500">
         {frontLanguage}

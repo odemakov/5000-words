@@ -36,9 +36,10 @@ Primary learning screen implementing receptive and productive language learning 
 - **Queue Source**: Words marked as "known" during receptive learning
 
 ### Spaced Repetition Reviews
-- **recap7**: 7-day review cycle for recently mastered words
-- **recap14**: 14-day review cycle for reinforced vocabulary
-- **recap30**: 30-day review cycle for strong retention
+- **reviewQueue**: Pool-based review system with configurable intervals
+  - **POOL1**: Short-term review (default 7 days)
+  - **POOL2**: Medium-term review (default 14 days)
+  - **POOL3**: Long-term review (default 30 days)
 - **Review Actions**:
   - **Known (swipe right)**: Advance to next spaced interval or mark as fully learned
   - **Learning (swipe left)**: Demote back to appropriate learning queue

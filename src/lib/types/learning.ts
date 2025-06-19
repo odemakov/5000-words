@@ -1,4 +1,5 @@
 import { type Level } from '$lib/constants/modes';
+import { type ReviewPool } from '$lib/constants/review';
 
 // Core learning state interface with optimized data structures
 export interface LearningState {
@@ -40,8 +41,7 @@ export interface WordInQueue {
 // Review word extends queue item with review-specific data
 export interface ReviewWord extends WordInQueue {
   dueDate: number;
-  reviewCount: number;
-  interval: number; // Current interval in days (7, 14, or 30)
+  pool: ReviewPool; // Current review pool (POOL1, POOL2, or POOL3)
 }
 
 export interface DailyStats {
@@ -66,7 +66,7 @@ export interface CurrentCard {
   direction: CardDirection;
   attempts?: number;
   isReview?: boolean;
-  reviewInterval?: number; // 7, 14, or 30
+  reviewPool?: ReviewPool; // POOL1, POOL2, or POOL3
 }
 
 // Settings interface

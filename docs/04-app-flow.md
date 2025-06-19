@@ -21,10 +21,8 @@
   forwardQueue: [/* word objects */], // Primary learning queue (FR→RU)
   backwardQueue: [/* word objects */], // Backward learning queue (RU→FR)
 
-  // Spaced repetition queues
-  recap7: [/* {wordObj, dueDate} */],  // 7-day review queue
-  recap14: [/* {wordObj, dueDate} */], // 14-day review queue
-  recap30: [/* {wordObj, dueDate} */], // 30-day review queue
+  // Spaced repetition queue with pool-based system
+  reviewQueue: [/* {wordIndex, dueDate, pool} */], // Pool-based review queue
 
   // Learned words tracking
   learnedList: [/* word IDs */], // Fully learned words
@@ -77,14 +75,14 @@
    - Process based on current queue:
      - **forwardQueue + right swipe** → Move to backwardQueue
      - **forwardQueue + left swipe** → Reinsert randomly into second half of the queue
-     - **backwardQueue + right swipe** → Move to recap7 with 7-day due date
+     - **backwardQueue + right swipe** → Move to reviewQueue with POOL1 (default 7-day interval)
      - **backwardQueue + left swipe** → Reinsert randomly into second half of the queue
-     - **recap7 + right swipe** → Move to recap14 with 14-day due date
-     - **recap7 + left swipe** → Move to forwardQueue (if forward direction) or backwardQueue (if backward direction)
-     - **recap14 + right swipe** → Move to recap30 with 30-day due date
-     - **recap14 + left swipe** → Move to recap7 with new 7-day due date
-     - **recap30 + right swipe** → Move to learnedList (fully learned)
-     - **recap30 + left swipe** → Move to recap14 with new 14-day due date
+     - **reviewQueue (POOL1) + right swipe** → Move to POOL2 with configured interval
+     - **reviewQueue (POOL1) + left swipe** → Move to forwardQueue or backwardQueue based on card direction
+     - **reviewQueue (POOL2) + right swipe** → Move to POOL3 with configured interval
+     - **reviewQueue (POOL2) + left swipe** → Move back to POOL1 with new interval
+     - **reviewQueue (POOL3) + right swipe** → Move to learnedList (fully learned)
+     - **reviewQueue (POOL3) + left swipe** → Move back to POOL2 with new interval
 
 4. **Queue Refill Logic**:
    - User controls cards in forwardQueue
@@ -117,9 +115,9 @@
    - App recalculates due words on startup and after each action
 
 2. **Extended Absence Handling**:
-   - If user returns after >7 days absence:
-     - Offer "quick review" of random sample from recap queues
-     - Option to reset recap due dates to avoid overwhelming queue
+   - If user returns after extended absence:
+     - Offer "quick review" of random sample from review queue
+     - Option to reset review due dates to avoid overwhelming queue
 
 3. **Progress Calculation**:
    - Progress = Highest word index across all queues

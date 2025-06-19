@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { learningState, getReviewsCountByInterval } from '$lib/controllers/LearningController';
+  import { learningState, getReviewsCountByPool } from '$lib/controllers/LearningController';
   import {
     LEARNING_FORWARD,
     LEARNING_BACKWARD,
@@ -13,18 +13,19 @@
     isAddingMode,
     type LearningMode
   } from '$lib/constants/modes';
+  import { POOLS } from '$lib/constants/review';
 
   export let currentMode: LearningMode;
   export let onModeChange: (mode: LearningMode) => void;
 
-  // Calculate review stats by interval
-  $: review7Stats = $learningState.reviewQueue && getReviewsCountByInterval(7);
-  $: review14Stats = $learningState.reviewQueue && getReviewsCountByInterval(14);
-  $: review30Stats = $learningState.reviewQueue && getReviewsCountByInterval(30);
+  // Calculate review stats by pool
+  $: pool1Stats = $learningState.reviewQueue && getReviewsCountByPool(POOLS.POOL1);
+  $: pool2Stats = $learningState.reviewQueue && getReviewsCountByPool(POOLS.POOL2);
+  $: pool3Stats = $learningState.reviewQueue && getReviewsCountByPool(POOLS.POOL3);
   $: totalReviewStats = {
-    ready: review7Stats.ready + review14Stats.ready + review30Stats.ready,
-    notReady: review7Stats.notReady + review14Stats.notReady + review30Stats.notReady,
-    total: review7Stats.total + review14Stats.total + review30Stats.total
+    ready: pool1Stats.ready + pool2Stats.ready + pool3Stats.ready,
+    notReady: pool1Stats.notReady + pool2Stats.notReady + pool3Stats.notReady,
+    total: pool1Stats.total + pool2Stats.total + pool3Stats.total
   };
 
   function getModeStats(mode: LearningMode): { available: number; total: number } {
@@ -202,16 +203,16 @@
       </svg>
       <span class="text-sm text-yellow-700">{totalReviewStats.ready} reviews are due</span>
     </div>
-    {#if review7Stats.ready > 0 || review14Stats.ready > 0 || review30Stats.ready > 0}
+    {#if pool1Stats.ready > 0 || pool2Stats.ready > 0 || pool3Stats.ready > 0}
       <div class="mt-2 flex justify-center space-x-3 text-xs text-yellow-600">
-        {#if review7Stats.ready > 0}
-          <span>7-day: {review7Stats.ready}</span>
+        {#if pool1Stats.ready > 0}
+          <span>Pool 1: {pool1Stats.ready}</span>
         {/if}
-        {#if review14Stats.ready > 0}
-          <span>14-day: {review14Stats.ready}</span>
+        {#if pool2Stats.ready > 0}
+          <span>Pool 2: {pool2Stats.ready}</span>
         {/if}
-        {#if review30Stats.ready > 0}
-          <span>30-day: {review30Stats.ready}</span>
+        {#if pool3Stats.ready > 0}
+          <span>Pool 3: {pool3Stats.ready}</span>
         {/if}
       </div>
     {/if}
@@ -224,16 +225,16 @@
       <div class="font-medium">Review Progress</div>
       <div class="mt-1 grid grid-cols-3 gap-2 text-xs">
         <div>
-          <div class="font-medium">7-day</div>
-          <div>{review7Stats.ready}/{review7Stats.total}</div>
+          <div class="font-medium">Pool 1</div>
+          <div>{pool1Stats.ready}/{pool1Stats.total}</div>
         </div>
         <div>
-          <div class="font-medium">14-day</div>
-          <div>{review14Stats.ready}/{review14Stats.total}</div>
+          <div class="font-medium">Pool 2</div>
+          <div>{pool2Stats.ready}/{pool2Stats.total}</div>
         </div>
         <div>
-          <div class="font-medium">30-day</div>
-          <div>{review30Stats.ready}/{review30Stats.total}</div>
+          <div class="font-medium">Pool 3</div>
+          <div>{pool3Stats.ready}/{pool3Stats.total}</div>
         </div>
       </div>
     </div>
