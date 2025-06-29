@@ -18,27 +18,38 @@ export type LearningMode =
 // Mode type
 export type Level = typeof LEVEL_A1 | typeof LEVEL_A2 | typeof LEVEL_B1 | typeof LEVEL_B2;
 
-// Helper functions
-export function isLearningForwardMode(mode: string): mode is typeof LEARNING_FORWARD {
+// Simple helper functions for typed values
+export function isLearningForwardMode(mode: LearningMode): boolean {
   return mode === LEARNING_FORWARD;
 }
 
-export function isLearningBackwardMode(mode: string): mode is typeof LEARNING_BACKWARD {
+export function isLearningBackwardMode(mode: LearningMode): boolean {
   return mode === LEARNING_BACKWARD;
 }
 
-export function isLearningMode(
-  mode: string
-): mode is typeof LEARNING_FORWARD | typeof LEARNING_BACKWARD {
-  return isLearningForwardMode(mode) || isLearningBackwardMode(mode);
+export function isLearningMode(mode: LearningMode): boolean {
+  return mode === LEARNING_FORWARD || mode === LEARNING_BACKWARD;
 }
 
-export function isReviewingMode(mode: string): mode is typeof REVIEWING {
+export function isReviewingMode(mode: LearningMode): boolean {
   return mode === REVIEWING;
 }
 
-export function isAddingMode(mode: string): mode is typeof ADDING {
+export function isAddingMode(mode: LearningMode): boolean {
   return mode === ADDING;
+}
+
+// Validation function for string input (e.g., from localStorage, URL params)
+export function validateLearningMode(mode: string): LearningMode | null {
+  switch (mode) {
+    case LEARNING_FORWARD:
+    case LEARNING_BACKWARD:
+    case REVIEWING:
+    case ADDING:
+      return mode;
+    default:
+      return null;
+  }
 }
 
 // Mode display information
