@@ -9,17 +9,16 @@
     MODE_INFO,
     type LearningMode
   } from '$lib/constants/modes';
-
+  import { activeTooltip, toggleTooltip, closeTooltip } from '$lib/stores/tooltipStore';
   import { onMount } from 'svelte';
 
   export let mode: LearningMode;
   export let currentMode: LearningMode;
-  export let available: number;
+  export let count: number;
   export let total: number;
-  export let isAvailable: boolean;
+  export let enabled: boolean;
   export let onClick: () => void;
 
-  let showTooltip = false;
   let tooltipElement: HTMLDivElement;
   let buttonElement: HTMLButtonElement;
 
@@ -91,7 +90,7 @@
             return {
               word: wordData.word,
               translations: wordData.translations,
-              info: `${dueInfo} • Pool ${item.pool}`
+              info: `${dueInfo} • Pool #${item.pool.replace('POOL', '')}`
             };
           })
           .filter(
@@ -106,17 +105,17 @@
 
   function handleHelpClick(event: MouseEvent | KeyboardEvent) {
     event.stopPropagation();
-    showTooltip = !showTooltip;
+    toggleTooltip(mode);
   }
 
   function handleClickOutside(event: MouseEvent) {
     if (
-      showTooltip &&
+      $activeTooltip === mode &&
       tooltipElement &&
       !tooltipElement.contains(event.target as Node) &&
       !buttonElement.contains(event.target as Node)
     ) {
-      showTooltip = false;
+      closeTooltip();
     }
   }
 
@@ -128,14 +127,15 @@
   });
 
   $: isActive = currentMode === mode;
+  $: showTooltip = $activeTooltip === mode;
   $: wordsForTooltip = showTooltip ? getWordsForMode() : [];
-  $: hasWords = available > 0 || mode === ADDING;
+  $: hasWords = count > 0 || mode === ADDING;
 
   function getButtonClasses() {
     const baseClasses =
       'relative flex-1 cursor-pointer rounded-md px-4 py-3 text-sm font-medium transition-all duration-200';
 
-    if (!isAvailable) {
+    if (!enabled) {
       return `${baseClasses} opacity-50 cursor-not-allowed text-gray-600`;
     }
 
@@ -148,25 +148,25 @@
   }
 </script>
 
-<div class="relative">
+<div class="relative flex-1 text-center">
   <button
     bind:this={buttonElement}
     class={getButtonClasses()}
-    disabled={!isAvailable}
+    disabled={!enabled}
     on:click={onClick}
   >
     <div class="flex flex-col items-center">
       <!-- Help icon -->
       {#if hasWords && mode !== ADDING}
         <div
-          class="absolute -top-1 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-gray-400 text-white transition-colors hover:bg-gray-500"
+          class="absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-400 text-white transition-colors hover:bg-gray-500"
           on:click={handleHelpClick}
           on:keydown={(e) => e.key === 'Enter' && handleHelpClick(e)}
           role="button"
           tabindex="0"
           aria-label="Show words in queue"
         >
-          <svg class="h-2.5 w-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -208,16 +208,11 @@
 
       <!-- Stats -->
       {#if mode === LEARNING_FORWARD || mode === LEARNING_BACKWARD}
-        {#if available > 0}
-          <span class="text-xs opacity-75">{available}</span>
+        {#if count > 0}
+          <span class="text-xs opacity-75">{count} words</span>
         {/if}
       {:else if mode === REVIEWING}
-        <div class="text-xs">
-          <span class="text-green-600">{available}</span>
-          {#if total > available}
-            <span class="text-gray-400">/{total}</span>
-          {/if}
-        </div>
+        <div class="text-xs opacity-75">{count}/{total} words</div>
       {/if}
     </div>
   </button>

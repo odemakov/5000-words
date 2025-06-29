@@ -60,44 +60,44 @@
 
 <div class="mb-6 w-full max-w-md space-y-2">
   <!-- Learning Modes Row -->
-  <div class="relative flex rounded-lg bg-white p-1 shadow-sm">
+  <div class="pp-1 flex rounded-lg bg-white shadow-sm">
     <ModeButton
       mode={LEARNING_FORWARD}
       {currentMode}
-      available={getModeStats(LEARNING_FORWARD).available}
+      count={getModeStats(LEARNING_FORWARD).available}
       total={getModeStats(LEARNING_FORWARD).total}
-      isAvailable={isModeAvailable(LEARNING_FORWARD)}
+      enabled={isModeAvailable(LEARNING_FORWARD)}
       onClick={() => handleModeClick(LEARNING_FORWARD)}
     />
 
     <ModeButton
       mode={LEARNING_BACKWARD}
       {currentMode}
-      available={getModeStats(LEARNING_BACKWARD).available}
+      count={getModeStats(LEARNING_BACKWARD).available}
       total={getModeStats(LEARNING_BACKWARD).total}
-      isAvailable={isModeAvailable(LEARNING_BACKWARD)}
+      enabled={isModeAvailable(LEARNING_BACKWARD)}
       onClick={() => handleModeClick(LEARNING_BACKWARD)}
     />
 
     <ModeButton
       mode={REVIEWING}
       {currentMode}
-      available={getModeStats(REVIEWING).available}
+      count={getModeStats(REVIEWING).available}
       total={getModeStats(REVIEWING).total}
-      isAvailable={isModeAvailable(REVIEWING)}
+      enabled={isModeAvailable(REVIEWING)}
       onClick={() => handleModeClick(REVIEWING)}
     />
   </div>
 
   <!-- Add Words Button -->
   {#if currentMode !== ADDING}
-    <div class="relative flex rounded-lg bg-white p-1 shadow-sm">
+    <div class="flex rounded-lg bg-white p-1 shadow-sm">
       <ModeButton
         mode={ADDING}
         {currentMode}
-        available={0}
+        count={0}
         total={0}
-        isAvailable={true}
+        enabled={true}
         onClick={() => handleModeClick(ADDING)}
       />
     </div>
