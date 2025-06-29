@@ -12,8 +12,9 @@ import {
 } from '$lib/constants/modes';
 import {
   getNextPool,
-  getPoolIntervalMs,
   getPreviousPool,
+  getReviewDueDate,
+  isReviewDue,
   POOLS,
   type ReviewPool
 } from '$lib/constants/review';
@@ -110,12 +111,11 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
       }
     } else if (isReviewingMode(currentMode)) {
       // Review mode - show due words from review queue
-      const now = Date.now();
 
       // Get due words from the review queue
       const dueWords = reviewQueue
-        .filter((word) => word.dueDate <= now)
-        .sort((a, b) => a.dueDate - b.dueDate);
+        .filter((word) => isReviewDue(word.addedAt, word.pool))
+        .sort((a, b) => getReviewDueDate(a.addedAt, a.pool) - getReviewDueDate(b.addedAt, b.pool));
 
       if (dueWords.length > 0) {
         const reviewItem = dueWords[0];
@@ -143,8 +143,7 @@ export const currentCard = derived<typeof learningState, CurrentCard | null>(
 // Helper function to get due reviews count
 export function getDueReviewsCount(): number {
   const state = get(learningState);
-  const now = Date.now();
-  return state.reviewQueue.filter((word) => word.dueDate <= now).length;
+  return state.reviewQueue.filter((word) => isReviewDue(word.addedAt, word.pool)).length;
 }
 
 // Helper function to get reviews count by interval
@@ -154,9 +153,8 @@ export function getReviewsCountByPool(pool: ReviewPool): {
   total: number;
 } {
   const state = get(learningState);
-  const now = Date.now();
   const wordsInPool = state.reviewQueue.filter((word) => word.pool === pool);
-  const ready = wordsInPool.filter((word) => word.dueDate <= now).length;
+  const ready = wordsInPool.filter((word) => isReviewDue(word.addedAt, word.pool)).length;
   const notReady = wordsInPool.length - ready;
   return { ready, notReady, total: wordsInPool.length };
 }
@@ -318,9 +316,8 @@ export class LearningController {
         // Cards from backward queue should be reviewed in backward direction
         const reviewItem: ReviewWord = {
           wordIndex: card.wordIndex,
-          addedAt: state.backwardQueue.find((w) => w.wordIndex === card.wordIndex)?.addedAt || now,
+          addedAt: now,
           attempts: card.attempts || 0,
-          dueDate: now + getPoolIntervalMs(POOLS.POOL1),
           pool: POOLS.POOL1
         };
 
@@ -382,9 +379,10 @@ export class LearningController {
 
         if (nextPool) {
           // Move to next pool
+          // Promote to next pool
           const updatedReviewItem: ReviewWord = {
             ...currentWord,
-            dueDate: now + getPoolIntervalMs(nextPool),
+            addedAt: now,
             pool: nextPool
           };
           newReviewQueue.push(updatedReviewItem);
@@ -417,9 +415,10 @@ export class LearningController {
 
         if (previousPool) {
           // Move back to previous pool
+          // Demote to previous pool
           const updatedReviewItem: ReviewWord = {
             ...currentWord,
-            dueDate: now + getPoolIntervalMs(previousPool),
+            addedAt: now,
             pool: previousPool
           };
           newReviewQueue.push(updatedReviewItem);

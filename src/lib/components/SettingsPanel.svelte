@@ -1,6 +1,8 @@
 <script lang="ts">
   import { LearningController, learningState } from '../controllers/LearningController.js';
   import { Storage } from '../storage.js';
+  import { goto } from '$app/navigation';
+  import { DEFAULT_REVIEW_INTERVALS } from '$lib/constants/review';
 
   export let onClose: () => void;
 
@@ -16,6 +18,9 @@
   let theme: 'light' | 'dark' = 'light';
   let soundEffects = true;
   let dailyGoal = 20;
+  let pool1Hours = DEFAULT_REVIEW_INTERVALS.POOL1_HOURS;
+  let pool2Hours = DEFAULT_REVIEW_INTERVALS.POOL2_HOURS;
+  let pool3Hours = DEFAULT_REVIEW_INTERVALS.POOL3_HOURS;
 
   // Load saved settings on component mount
   function loadSettings() {
@@ -25,6 +30,9 @@
       theme = (settings.theme as 'light' | 'dark') || 'light';
       soundEffects = settings.soundEffects !== false;
       dailyGoal = (settings.dailyGoal as number) || 20;
+      pool1Hours = settings.reviewIntervals?.pool1Hours || DEFAULT_REVIEW_INTERVALS.POOL1_HOURS;
+      pool2Hours = settings.reviewIntervals?.pool2Hours || DEFAULT_REVIEW_INTERVALS.POOL2_HOURS;
+      pool3Hours = settings.reviewIntervals?.pool3Hours || DEFAULT_REVIEW_INTERVALS.POOL3_HOURS;
     }
   }
 
@@ -34,7 +42,12 @@
       fontSize,
       theme,
       soundEffects,
-      dailyGoal
+      dailyGoal,
+      reviewIntervals: {
+        pool1Hours,
+        pool2Hours,
+        pool3Hours
+      }
     });
   }
 
@@ -119,6 +132,11 @@
     reader.readAsText(file);
   }
 
+  // Debug function
+  function handleDebugData() {
+    goto('/debug');
+  }
+
   // Apply font size changes
   $: {
     if (typeof document !== 'undefined') {
@@ -137,7 +155,13 @@
   }
 
   // Save other settings when they change
-  $: if (soundEffects !== undefined && dailyGoal !== undefined) {
+  $: if (
+    soundEffects !== undefined &&
+    dailyGoal !== undefined &&
+    pool1Hours !== undefined &&
+    pool2Hours !== undefined &&
+    pool3Hours !== undefined
+  ) {
     saveSettings();
   }
 
@@ -280,6 +304,114 @@
           ></span>
         </button>
       </div>
+    </div>
+
+    <!-- Review Settings -->
+    <div class="mb-6">
+      <h3 class="mb-3 text-sm font-medium text-gray-900">Review Intervals</h3>
+      <p class="mb-4 text-xs text-gray-600">
+        Configure how long to wait before reviewing words from each pool
+      </p>
+
+      <!-- Pool 1 Interval -->
+      <div class="mb-4">
+        <label class="mb-2 block text-sm text-gray-700" for="pool1-hours">
+          Pool 1 (Short-term) - Hours
+        </label>
+        <input
+          id="pool1-hours"
+          type="range"
+          min="1"
+          max="168"
+          step="1"
+          bind:value={pool1Hours}
+          class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
+        />
+        <div class="mt-1 flex justify-between text-xs text-gray-500">
+          <span>1 hour</span>
+          <span class="font-medium text-blue-600"
+            >{pool1Hours} hours ({Math.round((pool1Hours / 24) * 10) / 10} days)</span
+          >
+          <span>1 week</span>
+        </div>
+      </div>
+
+      <!-- Pool 2 Interval -->
+      <div class="mb-4">
+        <label class="mb-2 block text-sm text-gray-700" for="pool2-hours">
+          Pool 2 (Medium-term) - Hours
+        </label>
+        <input
+          id="pool2-hours"
+          type="range"
+          min="1"
+          max="720"
+          step="1"
+          bind:value={pool2Hours}
+          class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
+        />
+        <div class="mt-1 flex justify-between text-xs text-gray-500">
+          <span>1 hour</span>
+          <span class="font-medium text-blue-600"
+            >{pool2Hours} hours ({Math.round((pool2Hours / 24) * 10) / 10} days)</span
+          >
+          <span>1 month</span>
+        </div>
+      </div>
+
+      <!-- Pool 3 Interval -->
+      <div class="mb-4">
+        <label class="mb-2 block text-sm text-gray-700" for="pool3-hours">
+          Pool 3 (Long-term) - Hours
+        </label>
+        <input
+          id="pool3-hours"
+          type="range"
+          min="1"
+          max="2160"
+          step="1"
+          bind:value={pool3Hours}
+          class="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200"
+        />
+        <div class="mt-1 flex justify-between text-xs text-gray-500">
+          <span>1 hour</span>
+          <span class="font-medium text-blue-600"
+            >{pool3Hours} hours ({Math.round((pool3Hours / 24) * 10) / 10} days)</span
+          >
+          <span>3 months</span>
+        </div>
+      </div>
+
+      <div class="rounded-lg bg-yellow-50 p-3">
+        <p class="text-xs text-yellow-800">
+          💡 <strong>Tip:</strong> Pool 1 = first review, Pool 2 = second review, Pool 3 = final review
+          before "learned"
+        </p>
+      </div>
+    </div>
+
+    <!-- Debug Section (Development) -->
+    <div class="mb-6">
+      <h3 class="mb-3 text-sm font-medium text-gray-900">Debug</h3>
+
+      <button
+        on:click={handleDebugData}
+        class="flex w-full items-center justify-center space-x-2 rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple-700"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+          />
+        </svg>
+        <span>Populate Test Data</span>
+      </button>
+
+      <p class="mt-2 text-center text-xs text-gray-500">
+        Creates even numbers in all queues for testing
+      </p>
     </div>
 
     <!-- Data Management -->

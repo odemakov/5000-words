@@ -9,6 +9,7 @@
     MODE_INFO,
     type LearningMode
   } from '$lib/constants/modes';
+  import { getReviewDueDate } from '$lib/constants/review';
   import { activeTooltip, toggleTooltip, closeTooltip } from '$lib/stores/tooltipStore';
   import { onMount } from 'svelte';
 
@@ -63,12 +64,13 @@
       case REVIEWING: {
         const now = Date.now();
         return state.reviewQueue
-          .sort((a, b) => a.dueDate - b.dueDate) // Sort by due date (earliest first)
+          .sort((a, b) => getReviewDueDate(a.addedAt, a.pool) - getReviewDueDate(b.addedAt, b.pool)) // Sort by due date (earliest first)
           .map((item) => {
             const wordData = allWords[item.wordIndex];
             if (!wordData) return null;
 
-            const timeUntilDue = item.dueDate - now;
+            const dueDate = getReviewDueDate(item.addedAt, item.pool);
+            const timeUntilDue = dueDate - now;
             let dueInfo: string;
 
             if (timeUntilDue <= 0) {

@@ -27,6 +27,11 @@ export interface AppSettings {
   theme: 'light' | 'dark';
   soundEffects: boolean;
   dailyGoal: number;
+  reviewIntervals: {
+    pool1Hours: number; // Hours for POOL1 review interval
+    pool2Hours: number; // Hours for POOL2 review interval
+    pool3Hours: number; // Hours for POOL3 review interval
+  };
 }
 
 export interface UserProgress {

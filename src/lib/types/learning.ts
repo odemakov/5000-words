@@ -40,7 +40,6 @@ export interface WordInQueue {
 
 // Review word extends queue item with review-specific data
 export interface ReviewWord extends WordInQueue {
-  dueDate: number;
   pool: ReviewPool; // Current review pool (POOL1, POOL2, or POOL3)
 }
 
@@ -76,6 +75,11 @@ export interface AppSettings {
   soundEffects: boolean;
   autoAdvance: boolean;
   dailyGoal: number;
+  reviewIntervals: {
+    pool1Hours: number; // Hours for POOL1 review interval
+    pool2Hours: number; // Hours for POOL2 review interval
+    pool3Hours: number; // Hours for POOL3 review interval
+  };
 }
 
 // Session data for analytics
