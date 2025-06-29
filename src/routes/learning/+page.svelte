@@ -15,6 +15,7 @@
   import EmptyState from '$lib/components/EmptyState.svelte';
   import SettingsPanel from '$lib/components/SettingsPanel.svelte';
   import QueueFilling from '$lib/components/QueueFilling.svelte';
+  import UserInstructions from '$lib/components/UserInstructions.svelte';
   import {
     LEVEL_A1,
     LEARNING_FORWARD,
@@ -275,8 +276,8 @@
             properties={card.props}
             translations={card.translations}
             direction={card.direction}
-            onSwipeRight={handleKnown}
-            onSwipeLeft={handleUnknown}
+            onKnown={handleKnown}
+            onUnknown={handleUnknown}
           />
 
           {#if card.isReview}
@@ -296,21 +297,7 @@
           {/if}
         </div>
 
-        <div class="mt-6 max-w-sm text-center text-sm text-gray-600">
-          <p class="mb-2">
-            <span class="font-medium">Tap</span> to reveal translation
-          </p>
-          <div class="flex items-center justify-center space-x-4 text-xs">
-            <div class="flex items-center space-x-1">
-              <span class="inline-block h-3 w-3 rounded bg-red-500"></span>
-              <span>Don't know (← or swipe left)</span>
-            </div>
-            <div class="flex items-center space-x-1">
-              <span class="inline-block h-3 w-3 rounded bg-green-500"></span>
-              <span>Know (→ or swipe right)</span>
-            </div>
-          </div>
-        </div>
+        <UserInstructions variant="compact" />
       {:else}
         <EmptyState onModeSwitch={handleModeSwitch} />
       {/if}

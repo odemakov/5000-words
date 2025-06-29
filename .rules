@@ -1,0 +1,36 @@
+# Project Rules for 5000-words
+
+## Tech Stack
+- SvelteKit 2.16.0 with Svelte 5.0.0
+- Vite 6.2.6 build tool
+- TypeScript 5.0.0
+- TailwindCSS 4.0.0 with forms and typography plugins
+- localStorage for data persistence
+- Vitest for testing
+
+## Code Style & Standards
+- Use TypeScript for all source files
+- Prefer composition API patterns in Svelte 5
+- Add type annotations for function parameters and return types
+
+## Architecture Guidelines
+- Keep components small, focused and as simple as possible
+- Prioritize refactoring over new code with new bug to fix previous code with bug.
+- Ask questions if you're unsure about something
+- Use stores for shared state management
+- Follow SvelteKit's file-based routing
+- Use TypeScript interfaces for data models
+- Prefer functional programming patterns where applicable
+- Use consistent naming conventions for variables, functions, and components.
+
+## localStorage Best Practices
+- Always handle localStorage errors (try/catch)
+- Provide fallback values for missing data
+- Use JSON.parse/stringify for complex data
+- No data migration strategies for schema changes, the app is still in alpha
+- Implement proper data validation
+
+## Component Guidelines
+- Keep template logic minimal
+- Extract complex logic to separate functions
+- Use proper event handling patterns

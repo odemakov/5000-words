@@ -1,15 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { CardDirection } from '$lib/types/learning';
+
   // Props
   export let word = '';
   export let properties: string[] = [];
   export let translations: string[] = [];
   export let direction: CardDirection = CardDirection.FORWARD;
 
-  // Callback props instead of event dispatcher
-  export let onSwipeRight = () => {};
-  export let onSwipeLeft = () => {};
+  // Semantic callback props - clearer than generic onSwipeRight/onSwipeLeft
+  export let onKnown = () => {};
+  export let onUnknown = () => {};
 
   // Determine what to show based on direction
   $: frontText = direction === CardDirection.FORWARD ? word : translations[0] || '';
@@ -88,12 +89,13 @@
   function iDontKnow() {
     isSwipingLeft = true;
     resetAnimations();
-    onSwipeLeft(); // "Don't know"
+    onUnknown(); // "Don't know"
   }
+
   function iKnow() {
     isSwipingRight = true;
     resetAnimations();
-    onSwipeRight(); // "I know this word"
+    onKnown(); // "I know this word"
   }
 
   function handleTouchEnd(e: TouchEvent) {
@@ -170,6 +172,7 @@
     on:keydown={(e) => handleArrowKeyDown(e, handleClickRight)}
     role="button"
     tabindex="-2"
+    title="I know this"
   >
     <svg
       class="h-6 w-6 text-green-500"
@@ -187,6 +190,7 @@
     on:keydown={(e) => handleArrowKeyDown(e, handleClickLeft)}
     role="button"
     tabindex="-3"
+    title="Don't know"
   >
     <svg
       class="h-6 w-6 text-red-500"

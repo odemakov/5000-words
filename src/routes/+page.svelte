@@ -9,6 +9,7 @@
   import ProgressBar from '$lib/components/ProgressBar.svelte';
   import Header from '$lib/components/Header.svelte';
   import FinalResult from '$lib/components/FinalResult.svelte';
+  import UserInstructions from '$lib/components/UserInstructions.svelte';
   import {
     testState,
     currentWord,
@@ -87,12 +88,12 @@
   }
 
   // Level test handlers
-  function handleSwipeRight() {
+  function handleKnown() {
     // User knows this word
     recordResponse(true);
   }
 
-  function handleSwipeLeft() {
+  function handleUnknown() {
     // User doesn't know this word
     recordResponse(false);
   }
@@ -136,17 +137,11 @@
             word={word?.word || ''}
             properties={word?.props || []}
             translations={word?.translations || []}
-            onSwipeRight={handleSwipeRight}
-            onSwipeLeft={handleSwipeLeft}
+            onKnown={handleKnown}
+            onUnknown={handleUnknown}
           />
 
-          <div class="mt-8 w-full max-w-md text-center text-sm text-gray-500">
-            <p>Tap the card to see the translation</p>
-            <p class="mt-2">
-              Swipe <span class="text-green-500">right</span> if you know the word,
-              <span class="text-red-500">left</span> if you don't
-            </p>
-          </div>
+          <UserInstructions />
         {:else}
           <div class="text-center">
             <p class="text-gray-600">Loading test words...</p>

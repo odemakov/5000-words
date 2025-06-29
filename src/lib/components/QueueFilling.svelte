@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import FlashCard from './FlashCard.svelte';
+  import UserInstructions from './UserInstructions.svelte';
   import { CardDirection } from '$lib/types/learning';
   import { learningState } from '$lib/controllers/LearningController';
 
@@ -20,11 +21,11 @@
 
   const dispatch = createEventDispatcher<Events>();
 
-  function handleDontKnow() {
+  function handleUnknown() {
     dispatch('addToQueue');
   }
 
-  function handleKnow() {
+  function handleKnown() {
     dispatch('addToLearned');
   }
 
@@ -40,11 +41,11 @@
     switch (event.key) {
       case 'ArrowLeft':
         event.preventDefault();
-        handleDontKnow();
+        handleUnknown();
         break;
       case 'ArrowRight':
         event.preventDefault();
-        handleKnow();
+        handleKnown();
         break;
       case 'Enter':
         if (canSwitchToLearning) {
@@ -87,25 +88,13 @@
           {properties}
           {translations}
           direction={CardDirection.FORWARD}
-          onSwipeRight={handleKnow}
-          onSwipeLeft={handleDontKnow}
+          onKnown={handleKnown}
+          onUnknown={handleUnknown}
         />
       </div>
 
       <!-- Instructions -->
-      <div class="mt-6 max-w-sm text-center text-sm text-gray-600">
-        <p class="mb-3 font-medium">Do you know this word?</p>
-        <div class="flex items-center justify-center space-x-6 text-xs">
-          <div class="flex items-center space-x-2">
-            <span class="inline-block h-3 w-3 rounded bg-red-500"></span>
-            <span>Don't know<br />(← or swipe left)</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <span class="inline-block h-3 w-3 rounded bg-green-500"></span>
-            <span>I know this<br />(→ or swipe right)</span>
-          </div>
-        </div>
-      </div>
+      <UserInstructions showTapInstruction={false} variant="compact" />
     {:else}
       <div class="text-center">
         <div
