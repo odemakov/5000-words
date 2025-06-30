@@ -52,7 +52,20 @@ const createDefaultState = (): LearningState => ({
 });
 
 // Learning state store
+// Initialize with a default state, but will be properly loaded on first access
 export const learningState = writable<LearningState>(createDefaultState());
+
+// Initialize the learning state from storage on module load
+function initializeLearningState(): void {
+  const savedState = Storage.getLearningState() as LearningState | null;
+  if (savedState) {
+    console.log('LearningController: Loading saved state on initialization');
+    learningState.set(savedState);
+  }
+}
+
+// Call initialization when module loads
+initializeLearningState();
 
 // Cache for word data to avoid repeated storage calls
 let wordsCache: WordData[] | null = null;
@@ -465,11 +478,26 @@ export class LearningController {
 
   static saveState() {
     const state = get(learningState);
+    console.log('LearningController: Saving state with queues:', {
+      forward: state.forwardQueue.length,
+      backward: state.backwardQueue.length,
+      review: state.reviewQueue.length
+    });
     Storage.saveLearningState(state);
   }
 
   static loadState(): LearningState | null {
-    return Storage.getLearningState() as LearningState | null;
+    const savedState = Storage.getLearningState() as LearningState | null;
+    if (savedState) {
+      console.log('LearningController: Loading state with queues:', {
+        forward: savedState.forwardQueue?.length || 0,
+        backward: savedState.backwardQueue?.length || 0,
+        review: savedState.reviewQueue?.length || 0
+      });
+      // Update the store immediately when loading
+      learningState.set(savedState);
+    }
+    return savedState;
   }
 
   static resetProgress() {

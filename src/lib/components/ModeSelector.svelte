@@ -26,6 +26,26 @@
     total: pool1Stats.total + pool2Stats.total + pool3Stats.total
   };
 
+  // Only log when there are significant changes (for debugging)
+  let lastQueueCounts = { forward: 0, backward: 0, reviewReady: 0 };
+  $: {
+    const currentCounts = {
+      forward: $learningState.forwardQueue?.length || 0,
+      backward: $learningState.backwardQueue?.length || 0,
+      reviewReady: totalReviewStats.ready
+    };
+
+    // Only log if counts actually changed significantly
+    if (
+      currentCounts.forward !== lastQueueCounts.forward ||
+      currentCounts.backward !== lastQueueCounts.backward ||
+      currentCounts.reviewReady !== lastQueueCounts.reviewReady
+    ) {
+      console.log('Queue counts updated:', currentCounts);
+      lastQueueCounts = currentCounts;
+    }
+  }
+
   function getModeStats(mode: LearningMode): { available: number; total: number } {
     switch (mode) {
       case LEARNING_FORWARD:

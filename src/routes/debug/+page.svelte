@@ -4,6 +4,7 @@
   import { LearningController, learningState } from '$lib/controllers/LearningController';
   import { POOLS } from '$lib/constants/review';
   import { LEVEL_A2 } from '$lib/constants/modes';
+  import { Storage } from '$lib/storage';
   import type { WordInQueue, ReviewWord, LearningState } from '$lib/types/learning';
 
   let isPopulating = true;
@@ -16,7 +17,7 @@
 
       setTimeout(() => {
         goto('/learning');
-      }, 1500);
+      }, 2000);
     } catch (error) {
       console.error('Failed to populate debug data:', error);
       status = 'Failed to populate debug data. Check console for details.';
@@ -27,10 +28,32 @@
   async function populateDebugData(): Promise<void> {
     const now = Date.now();
 
+    // First, ensure words are loaded into localStorage
+    let words = Storage.getWords();
+    if (!words || words.length === 0) {
+      console.log('=== DEBUG: Words not loaded, downloading from server ===');
+      status = 'Loading words data...';
+
+      try {
+        const { words: downloadedWords, version } = await Storage.downloadWords();
+        Storage.saveWords(downloadedWords);
+        Storage.saveVersion(version);
+      } catch (error) {
+        console.error('Failed to load words:', error);
+        throw new Error('Failed to load words data required for debug mode');
+      }
+    }
+
+    status = 'Creating debug learning state...';
+
+    // Get the loaded words to ensure we use valid indices
+    const loadedWords = Storage.getWords();
+    const maxIndex = Math.min(100, loadedWords ? loadedWords.length - 1 : 99); // Use first 100 words for safety
+
     const debugState: LearningState = {
       detectedLevel: LEVEL_A2,
       levelTestResults: [],
-      progress: 60,
+      progress: maxIndex,
       wordsLearned: 30,
       wordsReviewed: 20,
 
@@ -99,8 +122,43 @@
       }
     };
 
+    console.log('=== DEBUG: Setting learning state ===');
+    console.log('Forward queue length:', debugState.forwardQueue.length);
+    console.log('Backward queue length:', debugState.backwardQueue.length);
+    console.log('Review queue length:', debugState.reviewQueue.length);
+    console.log('Learned list length:', debugState.learnedList.length);
+
+    // Set the state and save it immediately
     learningState.set(debugState);
     LearningController.saveState();
+
+    // Wait a moment to ensure the state is fully processed
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Verify the state was saved and loaded correctly
+    const savedState = LearningController.loadState();
+    if (savedState) {
+      console.log('=== DEBUG: State saved and loaded successfully ===');
+      console.log('Saved forward queue length:', savedState.forwardQueue?.length || 0);
+      console.log('Saved backward queue length:', savedState.backwardQueue?.length || 0);
+      console.log('Saved review queue length:', savedState.reviewQueue?.length || 0);
+
+      // Validate that words can be loaded for the indices we created
+      const wordsData = Storage.getWords();
+      const testWordIndex = debugState.forwardQueue[0]?.wordIndex;
+      const testWord = wordsData?.[testWordIndex];
+      console.log('=== DEBUG: Test word validation ===');
+      console.log('Test word index:', testWordIndex);
+      console.log('Test word data:', testWord);
+
+      if (!testWord) {
+        console.error(
+          '=== DEBUG: WARNING - Test word not found! Words may not be loaded properly ==='
+        );
+      }
+    } else {
+      console.error('=== DEBUG: Failed to save/load state! ===');
+    }
 
     status = 'Debug data populated successfully!';
     isPopulating = false;

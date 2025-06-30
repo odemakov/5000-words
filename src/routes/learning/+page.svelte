@@ -50,15 +50,22 @@
   let addingStats = { learnedCount: 0, canSwitchToLearning: false };
 
   onMount(async () => {
-    // Try to load existing state
-    const savedState = LearningController.loadState();
-    if (savedState) {
-      learningState.set(savedState);
-      isInitialized = true;
-    } else {
+    // The learningState store should already be initialized by LearningController
+    // Just check if we have a valid state, if not initialize
+    const currentState = $learningState;
+
+    // Only initialize if we have completely empty state (no queues and no learned words)
+    const hasAnyData =
+      currentState.forwardQueue.length > 0 ||
+      currentState.backwardQueue.length > 0 ||
+      currentState.reviewQueue.length > 0 ||
+      currentState.learnedList.length > 0;
+
+    if (!hasAnyData) {
       await LearningController.initializeQueueFilling(LEVEL_A1, []);
-      isInitialized = true;
     }
+
+    isInitialized = true;
   });
 
   // Card interaction handlers
