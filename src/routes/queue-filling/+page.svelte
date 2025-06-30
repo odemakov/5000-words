@@ -2,7 +2,11 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import QueueFilling from '$lib/components/QueueFilling.svelte';
-  import { LearningController, learningState } from '$lib/controllers/LearningController';
+  import {
+    UnifiedLearningService,
+    unifiedLearningState,
+    getWordByIndex
+  } from '$lib/services/UnifiedLearningService';
 
   let currentWord: { word: string; props: string[]; translations: string[]; index: number } | null =
     null;
@@ -10,10 +14,15 @@
   let isInitialized = false;
 
   onMount(async () => {
-    // Check if we have a valid learning state
-    const savedState = LearningController.loadState();
-    if (!savedState) {
-      // Redirect back to home if no state
+    // Initialize the unified learning service
+    await UnifiedLearningService.initialize();
+
+    const state = $unifiedLearningState;
+
+    // Check if we have any learning data
+    const hasData = state.learningQueue.length > 0 || state.learnedWords.length > 0;
+    if (!hasData) {
+      // If no data, redirect to home to take level test
       goto('/');
       return;
     }
@@ -24,20 +33,41 @@
   });
 
   function loadNextWord() {
-    currentWord = LearningController.getCurrentQueueFillingWord();
+    const state = $unifiedLearningState;
+    const currentProgress = state.progress;
+    const wordsInQueue = new Set(state.learningQueue.map((item) => item.wordId));
+    const learnedWords = new Set(state.learnedWords);
+
+    // Find next available word
+    for (let i = currentProgress; i < 5000; i++) {
+      if (!wordsInQueue.has(i) && !learnedWords.has(i)) {
+        const wordData = getWordByIndex(i);
+        if (wordData) {
+          currentWord = {
+            word: wordData.word,
+            props: wordData.props,
+            translations: wordData.translations,
+            index: i
+          };
+          return;
+        }
+      }
+    }
+
+    currentWord = null;
   }
 
   function updateStats() {
-    const state = $learningState;
+    const state = $unifiedLearningState;
     stats = {
-      learnedCount: state.learnedList.length,
-      canSwitchToLearning: state.forwardQueue.length >= 10
+      learnedCount: state.learnedWords.length,
+      canSwitchToLearning: UnifiedLearningService.getAvailableWordsCount() >= 10
     };
   }
 
   function handleAddToQueue() {
     if (currentWord) {
-      LearningController.addWordToQueue(currentWord.index);
+      UnifiedLearningService.addWordToQueue(currentWord.index);
       loadNextWord();
       updateStats();
     }
@@ -45,7 +75,7 @@
 
   function handleAddToLearned() {
     if (currentWord) {
-      LearningController.addWordToLearned(currentWord.index);
+      UnifiedLearningService.addWordToLearned(currentWord.index);
       loadNextWord();
       updateStats();
     }
@@ -60,11 +90,10 @@
   function handleSkip() {
     if (currentWord) {
       // Just move to next word without adding to any list
-      learningState.update((s) => ({
+      unifiedLearningState.update((s) => ({
         ...s,
         progress: Math.max(s.progress, currentWord!.index + 1)
       }));
-      LearningController.saveState();
       loadNextWord();
     }
   }
@@ -119,9 +148,10 @@
       <p class="mb-6 text-gray-600">
         You've gone through all available words for your level.
         {#if stats.canSwitchToLearning}
-          You can start learning with your queue of {$learningState.forwardQueue.length} words.
+          You can start learning with your queue of {UnifiedLearningService.getAvailableWordsCount()}
+          words.
         {:else}
-          You have {$learningState.forwardQueue.length} words in your queue and {stats.learnedCount}
+          You have {UnifiedLearningService.getAvailableWordsCount()} words in your queue and {stats.learnedCount}
           words marked as known.
         {/if}
       </p>
@@ -132,7 +162,7 @@
             on:click={handleSwitchToLearning}
             class="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
           >
-            Start Learning ({$learningState.forwardQueue.length} words)
+            Start Learning ({UnifiedLearningService.getAvailableWordsCount()} words)
           </button>
         {/if}
 

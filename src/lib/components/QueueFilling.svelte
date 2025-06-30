@@ -2,8 +2,8 @@
   import { createEventDispatcher } from 'svelte';
   import FlashCard from './FlashCard.svelte';
   import UserInstructions from './UserInstructions.svelte';
-  import { CardDirection } from '$lib/types/learning';
-  import { learningState } from '$lib/controllers/LearningController';
+  import { CardDirection } from '$lib/types/queue';
+  import { unifiedLearningState, queueStats } from '$lib/services/UnifiedLearningService';
 
   export let word: string = '';
   export let properties: string[] = [];
@@ -70,7 +70,9 @@
     <div class="mb-6 w-full rounded-lg bg-white p-4 shadow-sm">
       <div class="grid grid-cols-2 gap-4 text-center">
         <div>
-          <div class="text-2xl font-bold text-blue-600">{$learningState.forwardQueue.length}</div>
+          <div class="text-2xl font-bold text-blue-600">
+            {$queueStats.passive.total + $queueStats.active.total}
+          </div>
           <div class="text-xs tracking-wide text-gray-500 uppercase">To Learn</div>
         </div>
         <div>
@@ -87,7 +89,7 @@
           {word}
           {properties}
           {translations}
-          direction={CardDirection.FORWARD}
+          direction={CardDirection.PASSIVE}
           onKnown={handleKnown}
           onUnknown={handleUnknown}
         />
@@ -111,7 +113,7 @@
           on:click={handleSwitchToLearning}
           class="w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none"
         >
-          Start Learning ({$learningState.forwardQueue.length} words)
+          Start Learning ({$queueStats.passive.total + $queueStats.active.total} words)
         </button>
         <p class="mt-2 text-center text-xs text-gray-500">
           Or continue adding words • Press Enter to start learning

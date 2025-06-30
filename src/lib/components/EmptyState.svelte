@@ -1,27 +1,26 @@
 <script lang="ts">
   import { type LearningMode } from '$lib/constants/modes';
   export let onModeSwitch: (mode: LearningMode) => void;
-  import { learningState, getDueReviewsCount } from '$lib/controllers/LearningController';
-  import { LEARNING_FORWARD, LEARNING_BACKWARD, REVIEWING } from '$lib/constants/modes';
+  import { queueStats } from '$lib/services/UnifiedLearningService';
+  import { UnifiedLearningService } from '$lib/services/UnifiedLearningService';
 
-  $: canSwitchToForward = $learningState.forwardQueue.length > 0;
-  $: canSwitchToBackward = $learningState.backwardQueue.length > 0;
-  $: canSwitchToLearning = canSwitchToForward || canSwitchToBackward;
-
-  $: dueReviewsCount = $learningState.reviewQueue && getDueReviewsCount();
-  $: canSwitchToReviewing = dueReviewsCount > 0;
+  $: totalAvailable = $queueStats.passive.available + $queueStats.active.available;
+  $: totalReviews =
+    $queueStats.review1.available + $queueStats.review2.available + $queueStats.review3.available;
+  $: canSwitchToLearning = totalAvailable > 0;
+  $: canSwitchToReviewing = totalReviews > 0;
 
   function handleReviewMode() {
     if (canSwitchToReviewing) {
-      onModeSwitch(REVIEWING);
+      UnifiedLearningService.switchMode('reviewing');
+      onModeSwitch('reviewing' as LearningMode);
     }
   }
 
   function handleLearningModes() {
-    if (canSwitchToForward) {
-      onModeSwitch(LEARNING_FORWARD);
-    } else if (canSwitchToBackward) {
-      onModeSwitch(LEARNING_BACKWARD);
+    if (canSwitchToLearning) {
+      UnifiedLearningService.switchMode('learning');
+      onModeSwitch('learning' as LearningMode);
     }
   }
 </script>
@@ -51,7 +50,7 @@
         content!
       </p>
     </div>
-  {:else if canSwitchToForward || canSwitchToBackward}
+  {:else if canSwitchToLearning}
     <!-- No learning cards available -->
     <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
       <svg class="h-10 w-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +84,7 @@
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
         </svg>
-        Switch to Reviews ({dueReviewsCount} due)
+        Switch to Reviews ({totalReviews} due)
       </button>
     {:else}
       <div class="rounded-lg bg-green-50 p-4">

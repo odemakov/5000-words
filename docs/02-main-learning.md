@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Primary learning screen implementing receptive and productive language learning with user-controlled queue management and spaced repetition. Users build their own vocabulary pipeline through manual word selection, then progress through: receptive learning → productive learning → spaced repetition mastery.
+Primary learning screen implementing passive and active language learning with unified queue management and spaced repetition. Users build their own vocabulary pipeline through manual word selection, then progress through: passive learning → active learning → spaced repetition mastery using a 3-consecutive success system.
 
 ## Learning Flow
 
@@ -11,80 +11,83 @@ Primary learning screen implementing receptive and productive language learning 
 - **Word Presentation**: Sequential presentation starting from detected level index
   - A1: words 0-799, A2: words 800-1999, B1: words 2000-3999, B2: words 4000-4999
 - **User Decision per Word**:
-  - **Swipe left**: "I don't know" → Add to forwardQueue for receptive learning
-  - **Swipe right**: "I already know" → Add directly to learnedList
-- **Continuous Access**: Users can return to Add Words mode anytime to expand vocabulary. User controls forwardQueue size by himself.
+  - **Swipe left**: "I don't know" → Add to learningQueue at passive stage
+  - **Swipe right**: "I already know" → Add directly to learnedWords
+- **Continuous Access**: Users can return to Add Words mode anytime to expand vocabulary. User controls learning queue size themselves.
 
 ### Primary Learning Modes
 
-#### Receptive Learning (French → Russian)
+#### Passive Learning (French → Russian)
 - **Purpose**: Comprehension and recognition of French vocabulary
-- **Queue**: forwardQueue, user-populated
+- **Queue**: learningQueue (passive stage), user-populated
 - **Card Format**: French word → Russian translation(s)
 - **Learning Actions**:
-  - **Known (swipe right)**: Move to backwardQueue for productive learning
-  - **Learning (swipe left)**: Reinsert into second half of current queue
-- **No Auto-Population**: Queue expansion requires manual action via Add Words mode
+  - **Known (swipe right)**: Increment consecutiveCorrect counter (3 required to advance to active stage)
+  - **Learning (swipe left)**: Increment consecutiveWrong counter, reset consecutiveCorrect
+- **Stage Progression**: 3 consecutive correct answers advance to active stage
 
-#### Productive Learning (Russian → French)
+#### Active Learning (Russian → French)
 - **Purpose**: Active recall and production of French vocabulary
-- **Queue**: backwardQueue
+- **Queue**: learningQueue (active stage)
 - **Card Format**: Russian word(s) → French production
 - **Learning Actions**:
-  - **Known (swipe right)**: Graduate to recap7 spaced repetition cycle
-  - **Learning (swipe left)**: Reinsert into second half of current queue
-- **Queue Source**: Words marked as "known" during receptive learning
+  - **Known (swipe right)**: Increment consecutiveCorrect counter (3 required to advance to review1 stage)
+  - **Learning (swipe left)**: Increment consecutiveWrong counter (3 consecutive wrong demotes to passive stage)
+- **Stage Progression**: Words advance from passive stage after 3 consecutive successes
 
 ### Spaced Repetition Reviews
-- **reviewQueue**: Pool-based review system with configurable intervals
-  - **POOL1**: Short-term review (default 7 days)
-  - **POOL2**: Medium-term review (default 14 days)
-  - **POOL3**: Long-term review (default 30 days)
+- **learningQueue**: Stage-based review system with configurable intervals
+  - **review1**: Short-term review (default 1 day)
+  - **review2**: Medium-term review (default 3 days)
+  - **review3**: Long-term review (default 7 days)
 - **Review Actions**:
-  - **Known (swipe right)**: Advance to next spaced interval or mark as fully learned
-  - **Learning (swipe left)**: Demote back to appropriate learning queue
-- **Smart Scheduling**: Reviews appear based on due dates, prioritizing overdue words
+  - **Known (swipe right)**: Increment consecutiveCorrect counter (3 required to advance to next stage)
+  - **Learning (swipe left)**: Increment consecutiveWrong counter (3 consecutive wrong demotes to previous stage)
+- **Smart Scheduling**: Reviews appear based on showAfter timestamps, prioritizing overdue words
+- **Final Mastery**: 3 consecutive successes in review3 stage marks word as fully learned
 
 ### Mode Control System
 
 #### Three-Mode Architecture
 1. **Learning Mode**
-   - **Receptive Focus**: Work primarily on forwardQueue (French → Russian)
-   - **Productive Focus**: Work primarily on backwardQueue (Russian → French)
+   - **Unified Interface**: Handle both passive and active stages from single learningQueue
+   - **Stage-Based Display**: Cards show appropriate direction based on current stage
 
 2. **Reviews Mode**
-   - **Unified Review Interface**: Handle all spaced repetition queues
-   - **Priority Scheduling**: Oldest overdue words first, regardless of interval
+   - **Unified Review Interface**: Handle all review stages (review1, review2, review3)
+   - **Priority Scheduling**: Overdue words first, then by stage order
 
 3. **Add Words Mode**
-   - **Vocabulary Expansion**: Access queue filling interface to grow forwardQueue
+   - **Vocabulary Expansion**: Access queue filling interface to grow learningQueue
    - **Unlimited Access**: Available anytime without restrictions
    - **Progress Continuation**: Resume from last position or explore new ranges
 
 ### Smart Queue Management
 
 #### Queue Behavior Logic
-- **Small Queue Shuffling** (< 4 cards): Unknown words placed at end
-- **Large Queue Shuffling** (≥ 4 cards): Unknown words randomly placed in second half
-- **No Automatic Refill**: All queues require manual population by user
+- **Consecutive Tracking**: Each word tracks consecutive correct/wrong responses
+- **Stage Progression**: 3 consecutive correct responses advance to next stage
+- **Stage Regression**: 3 consecutive wrong responses demote to previous stage (except passive stage)
+- **Intelligent Scheduling**: Words scheduled based on stage intervals, with overdue prioritization
 - **User-Controlled Growth**: Vocabulary expansion only through deliberate Add Words sessions
 
 #### Configurable Settings
-- **Progress Tracking**: Separate counters for receptive vs productive learning
+- **Interval Configuration**: Customizable timing for each review stage
+- **Progress Tracking**: Comprehensive analytics across all learning stages
 
 ### Progress Tracking & Statistics
 
 #### Learning Metrics
-- **Receptive Progress**: Highest word index successfully processed in forwardQueue
-- **Productive Progress**: Highest word index successfully processed in backwardQueue
-- **New Words Learned**: Total count progressing from forwardQueue → backwardQueue → recap7
+- **Stage Distribution**: Count of words in each learning stage (passive, active, review1, review2, review3)
+- **Progression Analytics**: Track advancement and regression patterns
+- **New Words Learned**: Total count progressing through full learning pipeline
 - **Words Reviewed**: Successful progressions through spaced repetition cycles
-- **Queue Statistics**: Live counters for all active queues and due reviews
+- **Queue Statistics**: Live counters for available vs scheduled words in each stage
 
 #### Visual Indicators
-- **Queue Status Display**: Real-time word counts for forwardQueue, backwardQueue, and all recap queues
-- **Due Review Counters**: Number of words ready for review in each spaced repetition interval
-- **Session Statistics**: New words added, reviews completed, time spent learning
+- **Unified Queue Display**: Real-time statistics for all learning stages with available/scheduled breakdown
+- **Due Review Counters**: Number of words ready for review in each stage
+- **Session Statistics**: New words added, stage progressions, reviews completed, time spent learning
 
 ## Key Features
 
@@ -92,24 +95,25 @@ Primary learning screen implementing receptive and productive language learning 
 - **Self-Directed Learning**: Complete control over vocabulary selection and pacing
 - **Flexible Mode Switching**: Change between Learning, Reviews, and Add Words without restrictions
 - **Manual Queue Building**: No forced vocabulary additions or automatic progressions
-- **Configurable Experience**: Adjust queue sizes and learning preferences in settings
+- **Configurable Experience**: Adjust review intervals and learning preferences in settings
 
 ### Comprehensive Learning Pipeline
-- **Receptive → Productive → Spaced Repetition**: Complete mastery pathway for each word
-- **Bidirectional Learning**: Separate progress tracking for comprehension vs production skills
-- **Intelligent Scheduling**: Spaced repetition based on proven memory retention intervals
+- **Passive → Active → Review Stages**: Complete mastery pathway for each word
+- **3-Consecutive System**: Reliable progression requiring consistent demonstration of knowledge
+- **Intelligent Scheduling**: Spaced repetition with stage-based intervals and overdue prioritization
 - **Persistent State**: Seamless resume capability with automatic progress saving
 
 ### Advanced Queue Management
-- **Smart Word Placement**: Unknown words strategically reinserted for optimal review timing
-- **Queue Size Optimization**: User-configurable backward queue size for personalized learning
+- **Consecutive Tracking**: Sophisticated tracking of correct/incorrect response patterns
+- **Stage-Based Scheduling**: Intelligent timing based on learning stage and performance
 - **No Auto-Population**: Prevents overwhelming users with unwanted vocabulary additions
 - **Manual Expansion**: Users actively choose when and which words to add to their learning pipeline
 
 ## Technical Implementation Notes
 
-- **Enhanced LearningController**: Extended with queue filling, direction switching, and smart placement methods
-- **New Component Architecture**: QueueFilling.svelte for Add Words mode, enhanced ModeSelector for three-way switching
-- **Persistent State Management**: All user actions automatically saved with granular progress tracking
-- **Configurable Settings**: Backward queue length and learning preferences stored in user settings
-- **Smart Card Delivery**: Context-aware card presentation based on current mode and available content
+- **UnifiedLearningService**: New service architecture with single queue management and stage-based progression
+- **QueueManager**: Core utilities for queue manipulation, statistics, and validation
+- **New Component Architecture**: QueueStatsDisplay.svelte for unified statistics, enhanced components for stage-based learning
+- **Persistent State Management**: All user actions automatically saved with comprehensive analytics
+- **Configurable Settings**: Review intervals and learning preferences stored in user settings
+- **Smart Card Delivery**: Context-aware card presentation based on learning stage and overdue prioritization

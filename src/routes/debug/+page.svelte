@@ -1,11 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { LearningController, learningState } from '$lib/controllers/LearningController';
-  import { POOLS } from '$lib/constants/review';
+  import { UnifiedLearningService, unifiedLearningState } from '$lib/services/UnifiedLearningService';
   import { LEVEL_A2 } from '$lib/constants/modes';
   import { Storage } from '$lib/storage';
-  import type { WordInQueue, ReviewWord, LearningState } from '$lib/types/learning';
+  import type { WordLearningItem, UnifiedLearningState } from '$lib/types/queue';
 
   let isPopulating = true;
   let status = 'Populating learning store with debug data...';
@@ -50,67 +49,88 @@
     const loadedWords = Storage.getWords();
     const maxIndex = Math.min(100, loadedWords ? loadedWords.length - 1 : 99); // Use first 100 words for safety
 
-    const debugState: LearningState = {
+    const learningQueue: WordLearningItem[] = [
+      // Passive stage words
+      ...Array.from(
+        { length: 5 },
+        (_, i): WordLearningItem => ({
+          wordId: i,
+          stage: 'passive',
+          consecutiveCorrect: Math.floor(Math.random() * 3),
+          consecutiveWrong: 0,
+          showAfter: now,
+          attempts: Math.floor(Math.random() * 3),
+          addedAt: now - i * 1000 * 60,
+          lastSeen: now - i * 1000 * 30
+        })
+      ),
+      // Active stage words
+      ...Array.from(
+        { length: 5 },
+        (_, i): WordLearningItem => ({
+          wordId: i + 5,
+          stage: 'active',
+          consecutiveCorrect: Math.floor(Math.random() * 3),
+          consecutiveWrong: 0,
+          showAfter: now,
+          attempts: Math.floor(Math.random() * 5),
+          addedAt: now - (i + 5) * 1000 * 60,
+          lastSeen: now - i * 1000 * 30
+        })
+      ),
+      // Review1 stage words
+      ...Array.from(
+        { length: 4 },
+        (_, i): WordLearningItem => ({
+          wordId: i + 10,
+          stage: 'review1',
+          consecutiveCorrect: Math.floor(Math.random() * 3),
+          consecutiveWrong: 0,
+          showAfter: now - 1000 * 60 * 60 * (i % 2), // Some ready, some not
+          attempts: Math.floor(Math.random() * 8),
+          addedAt: now - 1000 * 60 * 60 * 24,
+          lastSeen: now - 1000 * 60 * 60 * 12
+        })
+      ),
+      // Review2 stage words
+      ...Array.from(
+        { length: 3 },
+        (_, i): WordLearningItem => ({
+          wordId: i + 14,
+          stage: 'review2',
+          consecutiveCorrect: Math.floor(Math.random() * 3),
+          consecutiveWrong: 0,
+          showAfter: now + 1000 * 60 * 60 * i, // Scheduled for future
+          attempts: Math.floor(Math.random() * 12),
+          addedAt: now - 1000 * 60 * 60 * 24 * 3,
+          lastSeen: now - 1000 * 60 * 60 * 24
+        })
+      ),
+      // Review3 stage words
+      ...Array.from(
+        { length: 2 },
+        (_, i): WordLearningItem => ({
+          wordId: i + 17,
+          stage: 'review3',
+          consecutiveCorrect: Math.floor(Math.random() * 3),
+          consecutiveWrong: 0,
+          showAfter: now + 1000 * 60 * 60 * 24 * i, // Scheduled for future
+          attempts: Math.floor(Math.random() * 15),
+          addedAt: now - 1000 * 60 * 60 * 24 * 7,
+          lastSeen: now - 1000 * 60 * 60 * 24 * 3
+        })
+      )
+    ];
+
+    const debugState: UnifiedLearningState = {
       detectedLevel: LEVEL_A2,
       levelTestResults: [],
       progress: maxIndex,
-      wordsLearned: 30,
-      wordsReviewed: 20,
-
-      forwardQueue: Array.from(
-        { length: 10 },
-        (_, i): WordInQueue => ({
-          wordIndex: i,
-          addedAt: now - i * 1000 * 60,
-          attempts: Math.floor(Math.random() * 3)
-        })
-      ),
-
-      backwardQueue: Array.from(
-        { length: 10 },
-        (_, i): WordInQueue => ({
-          wordIndex: i + 10,
-          addedAt: now - i * 1000 * 60,
-          attempts: Math.floor(Math.random() * 3)
-        })
-      ),
-
-      reviewQueue: [
-        ...Array.from(
-          { length: 4 },
-          (_, i): ReviewWord => ({
-            wordIndex: i + 20,
-            addedAt: now - 24 * 60 * 60 * 1000 - i * 60 * 60 * 1000, // Some due, some not
-            attempts: 1,
-            pool: POOLS.POOL1
-          })
-        ),
-        ...Array.from(
-          { length: 4 },
-          (_, i): ReviewWord => ({
-            wordIndex: i + 24,
-            addedAt:
-              now -
-              72 * 60 * 60 * 1000 +
-              (i % 2 === 0 ? -12 * 60 * 60 * 1000 : 12 * 60 * 60 * 1000), // Mixed due times
-            attempts: 2,
-            pool: POOLS.POOL2
-          })
-        ),
-        ...Array.from(
-          { length: 4 },
-          (_, i): ReviewWord => ({
-            wordIndex: i + 28,
-            addedAt: now - 144 * 60 * 60 * 1000 + i * 24 * 60 * 60 * 1000, // Future due dates
-            attempts: 3,
-            pool: POOLS.POOL3
-          })
-        )
-      ],
-
-      learnedList: Array.from({ length: 20 }, (_, i) => i + 40),
-
-      currentMode: 'learning-forward',
+      wordsLearned: 20,
+      wordsReviewed: 15,
+      learningQueue,
+      learnedWords: Array.from({ length: 20 }, (_, i) => i + 20),
+      currentMode: 'learning',
       lastActivity: now,
       sessionStartTime: now,
       todayStats: {
@@ -122,32 +142,24 @@
       }
     };
 
-    console.log('=== DEBUG: Setting learning state ===');
-    console.log('Forward queue length:', debugState.forwardQueue.length);
-    console.log('Backward queue length:', debugState.backwardQueue.length);
-    console.log('Review queue length:', debugState.reviewQueue.length);
-    console.log('Learned list length:', debugState.learnedList.length);
+    console.log('=== DEBUG: Setting unified learning state ===');
+    console.log('Learning queue length:', debugState.learningQueue.length);
+    console.log('Learned words length:', debugState.learnedWords.length);
 
-    // Set the state and save it immediately
-    learningState.set(debugState);
-    LearningController.saveState();
+    // Set the state using the unified service
+    unifiedLearningState.set(debugState);
+    UnifiedLearningService.saveState();
 
     // Wait a moment to ensure the state is fully processed
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Verify the state was saved and loaded correctly
-    const savedState = LearningController.loadState();
-    if (savedState) {
-      console.log('=== DEBUG: State saved and loaded successfully ===');
-      console.log('Saved forward queue length:', savedState.forwardQueue?.length || 0);
-      console.log('Saved backward queue length:', savedState.backwardQueue?.length || 0);
-      console.log('Saved review queue length:', savedState.reviewQueue?.length || 0);
+    console.log('=== DEBUG: State saved successfully ===');
 
-      // Validate that words can be loaded for the indices we created
-      const wordsData = Storage.getWords();
-      const testWordIndex = debugState.forwardQueue[0]?.wordIndex;
-      const testWord = wordsData?.[testWordIndex];
-      console.log('=== DEBUG: Test word validation ===');
+    // Validate that words can be loaded for the indices we created
+    const wordsData = Storage.getWords();
+    const testWordId = debugState.learningQueue[0]?.wordId;
+    const testWord = wordsData?.[testWordId];
+    console.log('=== DEBUG: Test word validation ===');
       console.log('Test word index:', testWordIndex);
       console.log('Test word data:', testWord);
 

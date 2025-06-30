@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation';
   import { Storage } from '../lib/storage.js';
   import { type Level } from '$lib/constants/modes';
-  import { LearningController } from '../lib/controllers/LearningController.js';
+  import { UnifiedLearningService } from '../lib/services/UnifiedLearningService.js';
   import Loader from '../lib/components/Loader.svelte';
   import FlashCard from '$lib/components/FlashCard.svelte';
   import ProgressBar from '$lib/components/ProgressBar.svelte';
@@ -74,13 +74,23 @@
     if (detectedLevel) {
       Storage.setUserLevel(detectedLevel);
 
-      // Initialize learning controller with test results
-      const testResults = $testState.responses.map((response, index) => ({
-        wordId: index,
-        known: response
-      }));
+      // Initialize unified learning service
+      await UnifiedLearningService.initialize();
 
-      await LearningController.initializeQueueFilling(detectedLevel as Level, testResults);
+      // Set the detected level in the unified state
+      UnifiedLearningService.updateDetectedLevel(detectedLevel as Level);
+
+      // Add known words to learned list and unknown words to queue based on test results
+      const testResults = $testState.responses;
+      testResults.forEach((known, index) => {
+        if (known) {
+          // Add known words directly to learned list
+          UnifiedLearningService.addWordToLearned(index);
+        } else {
+          // Add unknown words to learning queue
+          UnifiedLearningService.addWordToQueue(index);
+        }
+      });
 
       // Navigate to learning page
       goto('/learning');

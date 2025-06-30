@@ -12,10 +12,12 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 - **Forgetting curve optimization**: Reviews scheduled at optimal intervals for retention
 
 ### Queue Management
-- **Forward Queue**: French → Russian translation (30 cards max)
-- **Backward Queue**: Russian → French translation (30 cards max)
-- **Review Queues**: Separate queues for each spaced repetition tier
-- **Smart refilling**: 80% new words, 20% due reviews for optimal learning balance
+- **Unified Queue System**: Powered by UnifiedLearningService with single queue management
+- **Passive Stage**: French → Russian translation (learning language → native)
+- **Active Stage**: Russian → French translation (native → learning language)
+- **Review Stages**: Three spaced repetition tiers (review1, review2, review3)
+- **3 Consecutive Rule**: 3 correct answers advance, 3 wrong answers demote
+- **Intelligent Scheduling**: Automated spaced repetition with QueueManager optimization
 
 ### Learning Modes
 - **Learning Mode**: Work through new vocabulary in both directions
@@ -39,8 +41,9 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 - **Accessibility support** with proper ARIA labels
 
 #### Queue Statistics Dashboard
-- **Learning mode stats**: Forward/Backward queue counts with direction indicator
-- **Review mode stats**: Due reviews count with breakdown by pool (Pool 1/2/3)
+- **Learning mode stats**: Passive/Active stage counts with availability status
+- **Review mode stats**: Due reviews count with breakdown by stage (Review 1/2/3)
+- **Unified Display**: Single component showing all queue statistics
 - **Visual progress indicators** with color-coded review tiers
 - **Alert notifications** when reviews are overdue
 
@@ -78,21 +81,22 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 
 ### 4. Smart Learning Algorithm
 
-#### Intelligent Queue Management
-```javascript
-// Queue refill strategy
-- 80% new words from frequency-ordered vocabulary
-- 20% overdue review words from recap queues
-- Automatic queue size maintenance (30 cards each)
-- Prevention of duplicate words across queues
+#### Unified Queue Management
+```typescript
+// UnifiedLearningService architecture
+- Single unified learning queue managed by UnifiedLearningService
+- Reactive Svelte stores for real-time UI updates
+- QueueManager handles all queue operations and scheduling
+- Automated state persistence to localStorage
+- Comprehensive analytics and progress tracking
 ```
 
-#### Adaptive Response Processing
-- **Forward queue success**: Moves to backward queue for bidirectional learning
-- **Forward queue failure**: Reinserts at position 10-30 for spaced repetition
-- **Backward queue success**: Graduates to Pool 1 review queue
-- **Review promotion**: Pool 1 → Pool 2 → Pool 3 → Fully learned
-- **Review demotion**: Failed reviews move back to previous pool or learning queues
+#### Advanced Spaced Repetition
+- **Passive stage success**: Progress tracked with consecutive correct counter
+- **3 consecutive correct**: Promotes to next stage (passive → active → review1 → review2 → review3 → learned)
+- **3 consecutive wrong**: Demotes to previous stage (maintains learning curve)
+- **Intelligent scheduling**: Words shown at optimal intervals based on stage
+- **Priority system**: Overdue words prioritized, then by stage order
 
 #### Level-Based Progression
 - **A1 Level**: Words 1-800 (Beginner)
@@ -124,16 +128,30 @@ The 5000 Words French learning app has been significantly enhanced with a compre
 
 #### Optimized Storage
 ```typescript
-// Efficient word storage - only indices stored
-interface WordInQueue {
-  wordIndex: number;    // Reference to main word array
-  addedAt: number;      // Timestamp for analytics
-  attempts: number;     // Learning progress tracking
+// UnifiedLearningService state management
+interface WordLearningItem {
+  wordId: number;                    // Reference to word index
+  stage: LearningStage;              // Current learning stage
+  consecutiveCorrect: number;        // Consecutive "I know" responses (0-2)
+  consecutiveWrong: number;          // Consecutive "I don't know" responses (0-2)
+  showAfter: number;                 // Timestamp when available for review
+  attempts: number;                  // Total attempts made
+  addedAt: number;                   // When first added to queue
+  lastSeen: number;                  // Last time shown to user
 }
 
-interface ReviewWord extends WordInQueue {
-  dueDate: number;           // Next review date
-  pool: 'POOL1' | 'POOL2' | 'POOL3';  // Current review pool
+interface UnifiedLearningState {
+  detectedLevel: string;             // User's detected CEFR level
+  levelTestResults: any[];           // Level test response history
+  progress: number;                  // Current word progress index
+  wordsLearned: number;              // Total words mastered
+  wordsReviewed: number;             // Total review completions
+  learningQueue: WordLearningItem[]; // Single unified queue
+  learnedWords: number[];            // Fully mastered word IDs
+  currentMode: 'learning' | 'reviewing' | 'adding';
+  lastActivity: number;              // Last interaction timestamp
+  sessionStartTime: number;          // Session start time
+  todayStats: DailyStats;           // Daily progress tracking
 }
 ```
 
@@ -147,8 +165,8 @@ interface ReviewWord extends WordInQueue {
 
 ### Initial Setup
 1. **Level Detection Test**: Adaptive testing to determine starting level
-2. **Queue Initialization**: Populates forward queue with appropriate words
-3. **Learning Mode Start**: Begins with forward direction (French → Russian)
+2. **Queue Initialization**: Populates learning queue with words at passive stage
+3. **Learning Mode Start**: Begins with passive stage (French → Russian)
 
 ### Daily Learning Cycle
 1. **Mode Selection**: Choose between Learning and Reviews based on due cards
@@ -185,10 +203,12 @@ interface ReviewWord extends WordInQueue {
 - **Bundle optimization**: Tree-shaking and code splitting
 
 ### Code Architecture
-- **TypeScript**: Full type safety throughout the application
-- **Modular design**: Reusable components and clear separation of concerns
-- **State management**: Svelte stores for reactive data flow
-- **Error handling**: Comprehensive error boundaries and user feedback
+- **TypeScript**: Full type safety with comprehensive interfaces
+- **Service Layer**: UnifiedLearningService handles all learning logic
+- **Modular design**: Clear separation between UI components and business logic
+- **Reactive State**: Svelte stores with derived state for optimal performance
+- **Queue Management**: Dedicated QueueManager for complex queue operations
+- **Error handling**: Comprehensive error boundaries and graceful degradation
 
 ### Browser Compatibility
 - **Modern browsers**: Optimized for Chrome, Firefox, Safari, Edge
@@ -228,10 +248,11 @@ interface ReviewWord extends WordInQueue {
 - **Synchronization**: Cloud backup and cross-device sync
 
 ### Technical Roadmap
-- **Performance monitoring**: Real-time performance metrics
+- **Performance monitoring**: Real-time performance metrics with UnifiedLearningService analytics
 - **A/B testing**: Optimize learning algorithms through experimentation
-- **Machine learning**: Personalized difficulty adjustment
+- **Machine learning**: Personalized difficulty adjustment based on learning patterns
 - **API integration**: Connect with external language learning services
+- **Enhanced Analytics**: Leverage UnifiedLearningService data for deeper insights
 
 ## 📁 File Structure
 
@@ -241,14 +262,21 @@ src/
 │   ├── components/          # Reusable UI components
 │   │   ├── FlashCard.svelte       # Enhanced flashcard with direction support
 │   │   ├── ModeSelector.svelte    # Learning/Reviews mode switcher
-│   │   ├── QueueStats.svelte      # Queue statistics display
+│   │   ├── QueueStatsDisplay.svelte # Unified queue statistics display
 │   │   ├── ProgressHeader.svelte  # Header with progress tracking
 │   │   ├── EmptyState.svelte      # Empty state handling
 │   │   └── SettingsPanel.svelte   # Comprehensive settings interface
-│   ├── controllers/         # Business logic
-│   │   ├── LearningController.ts  # Main learning algorithm
+│   ├── services/            # Business logic layer
+│   │   ├── QueueManager.ts        # Core queue management utilities
+│   │   ├── UnifiedLearningService.ts # Main learning service (replaces LearningController)
+│   │   └── __tests__/             # Comprehensive test suite
+│   │       ├── QueueManager.test.ts      # Queue management tests
+│   │       └── UnifiedLearningService.test.ts # Service integration tests
+│   ├── controllers/         # Legacy controllers (deprecated)
+│   │   ├── LearningController.ts  # Legacy controller (replaced by UnifiedLearningService)
 │   │   └── TestController.ts      # Level detection logic
 │   ├── types/              # TypeScript definitions
+│   │   ├── queue.ts               # Unified queue type definitions
 │   │   └── learning.ts           # Learning system interfaces
 │   └── storage.ts          # Enhanced data persistence
 └── routes/
@@ -275,7 +303,7 @@ npm run dev
 ### First Launch
 1. **Word Loading**: App downloads latest vocabulary database
 2. **Level Test**: Complete adaptive placement test
-3. **Learning Setup**: System initializes personalized learning queues
-4. **Begin Study**: Start learning with optimized spaced repetition
+3. **Learning Setup**: System initializes unified learning queue
+4. **Begin Study**: Start learning with 3-consecutive progression system
 
 The enhanced 5000 Words app provides a complete language learning experience with scientific backing, modern UX design, and comprehensive progress tracking. The system adapts to individual learning patterns while maintaining motivation through clear progress indicators and achievement tracking.

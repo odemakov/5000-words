@@ -1,10 +1,10 @@
 <script lang="ts">
   import { type Level } from '../constants/modes';
-  import { learningState } from '$lib/controllers/LearningController';
+  import { unifiedLearningState } from '$lib/services/UnifiedLearningService';
   // Props
   export let startingWord = 1;
 
-  $: level = $learningState.detectedLevel;
+  $: level = $unifiedLearningState.detectedLevel;
 
   // Callback props
   export let onContinue = () => {};

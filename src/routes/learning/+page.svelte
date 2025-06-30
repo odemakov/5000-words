@@ -1,14 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    LearningController,
+    UnifiedLearningService,
     currentCard,
-    learningState,
-    getDueReviewsCount,
-    getLearningForwardCount,
-    getLearningBackwardCount
-  } from '$lib/controllers/LearningController';
-  import { MODE_INFO } from '$lib/constants/modes';
+    unifiedLearningState,
+    getWordByIndex
+  } from '$lib/services/UnifiedLearningService';
+
   import FlashCard from '$lib/components/FlashCard.svelte';
   import ModeSelector from '$lib/components/ModeSelector.svelte';
   import ProgressHeader from '$lib/components/ProgressHeader.svelte';
@@ -17,52 +15,52 @@
   import QueueFilling from '$lib/components/QueueFilling.svelte';
   import UserInstructions from '$lib/components/UserInstructions.svelte';
   import {
-    LEVEL_A1,
-    LEARNING_FORWARD,
+    LEARNING,
     ADDING,
-    isLearningForwardMode,
-    isLearningBackwardMode,
+    isLearningMode,
     isReviewingMode,
     isAddingMode,
     type LearningMode
   } from '$lib/constants/modes';
-  import { POOLS } from '$lib/constants/review';
 
   // Reactive data
   $: card = $currentCard;
-  $: state = $learningState;
+  $: state = $unifiedLearningState;
 
   // Check if we should show empty state for current mode
   $: shouldShowEmptyState = (() => {
-    if (isLearningForwardMode(state.currentMode) && state.forwardQueue.length === 0) return true;
-    if (isLearningBackwardMode(state.currentMode) && state.backwardQueue.length === 0) return true;
-    if (isReviewingMode(state.currentMode) && getDueReviewsCount() === 0) return true;
-    if (isAddingMode(state.currentMode) && state.backwardQueue.length === 0) return true;
+    if (isLearningMode(state.currentMode) && UnifiedLearningService.getAvailableWordsCount() === 0)
+      return true;
+    if (isReviewingMode(state.currentMode) && UnifiedLearningService.getOverdueWordsCount() === 0)
+      return true;
+    if (isAddingMode(state.currentMode)) return false; // Adding mode should show queue filling
 
     return false;
   })();
 
   let showSettings = false;
   let isInitialized = false;
-  let currentMode: LearningMode = LEARNING_FORWARD;
+  let currentMode: LearningMode = LEARNING;
   let addingWord: { word: string; props: string[]; translations: string[]; index: number } | null =
     null;
   let addingStats = { learnedCount: 0, canSwitchToLearning: false };
 
   onMount(async () => {
-    // The learningState store should already be initialized by LearningController
-    // Just check if we have a valid state, if not initialize
-    const currentState = $learningState;
+    // Initialize the unified learning service
+    await UnifiedLearningService.initialize();
 
-    // Only initialize if we have completely empty state (no queues and no learned words)
+    const currentState = $unifiedLearningState;
+
+    // Check if we have any data (words in queue or learned)
     const hasAnyData =
-      currentState.forwardQueue.length > 0 ||
-      currentState.backwardQueue.length > 0 ||
-      currentState.reviewQueue.length > 0 ||
-      currentState.learnedList.length > 0;
+      currentState.learningQueue.length > 0 || currentState.learnedWords.length > 0;
 
     if (!hasAnyData) {
-      await LearningController.initializeQueueFilling(LEVEL_A1, []);
+      // Start in adding mode if no data
+      currentMode = ADDING;
+      UnifiedLearningService.switchMode('adding');
+    } else {
+      currentMode = currentState.currentMode;
     }
 
     isInitialized = true;
@@ -70,22 +68,33 @@
 
   // Card interaction handlers
   async function handleKnown() {
-    await LearningController.processCardResponse(true);
+    if (!card) return;
+
+    UnifiedLearningService.processCardResponse({
+      wordId: card.wordId,
+      known: true,
+      responseTime: 0, // TODO: Track actual response time
+      timestamp: Date.now()
+    });
   }
 
   async function handleUnknown() {
-    await LearningController.processCardResponse(false);
+    if (!card) return;
+
+    UnifiedLearningService.processCardResponse({
+      wordId: card.wordId,
+      known: false,
+      responseTime: 0, // TODO: Track actual response time
+      timestamp: Date.now()
+    });
   }
 
   function handleModeSwitch(mode: LearningMode) {
     // Check if mode switch is allowed
-    if (isReviewingMode(mode) && getDueReviewsCount() === 0) {
+    if (isReviewingMode(mode) && UnifiedLearningService.getOverdueWordsCount() === 0) {
       return; // Mode selector should handle disabled state
     }
-    if (isLearningForwardMode(mode) && getLearningForwardCount() === 0) {
-      return; // Mode selector should handle disabled state
-    }
-    if (isLearningBackwardMode(mode) && getLearningBackwardCount() === 0) {
+    if (isLearningMode(mode) && UnifiedLearningService.getAvailableWordsCount() === 0) {
       return; // Mode selector should handle disabled state
     }
 
@@ -95,7 +104,7 @@
       updateAddingStats();
     } else {
       currentMode = mode;
-      LearningController.switchMode(mode);
+      UnifiedLearningService.switchMode(mode === 'learning' ? 'learning' : 'reviewing');
     }
   }
 
@@ -136,48 +145,72 @@
 
   // Adding mode handlers
   function loadAddingWord() {
-    addingWord = LearningController.getCurrentQueueFillingWord();
+    // Get next word that's not in queue or learned
+    const state = $unifiedLearningState;
+    const currentProgress = state.progress;
+    const wordsInQueue = new Set(state.learningQueue.map((item) => item.wordId));
+    const learnedWords = new Set(state.learnedWords);
+
+    // Find next available word
+    for (let i = currentProgress; i < 5000; i++) {
+      if (!wordsInQueue.has(i) && !learnedWords.has(i)) {
+        const wordData = getWordByIndex(i);
+        if (wordData) {
+          addingWord = {
+            word: wordData.word,
+            props: wordData.props,
+            translations: wordData.translations,
+            index: i
+          };
+          return;
+        }
+      }
+    }
+
+    addingWord = null;
+  }
+
+  function nextAddingWord() {
+    loadAddingWord();
   }
 
   function updateAddingStats() {
     addingStats = {
-      learnedCount: $learningState.learnedList.length,
-      canSwitchToLearning: $learningState.forwardQueue.length >= 10
+      learnedCount: $unifiedLearningState.learnedWords.length,
+      canSwitchToLearning: UnifiedLearningService.getAvailableWordsCount() >= 10
     };
   }
 
   function handleAddToQueue() {
     if (addingWord) {
-      LearningController.addWordToQueue(addingWord.index);
-      loadAddingWord();
+      UnifiedLearningService.addWordToQueue(addingWord.index);
+      nextAddingWord();
       updateAddingStats();
     }
   }
 
   function handleAddToLearned() {
     if (addingWord) {
-      LearningController.addWordToLearned(addingWord.index);
-      loadAddingWord();
+      // Add directly to learned words
+      unifiedLearningState.update((state) => ({
+        ...state,
+        learnedWords: [...state.learnedWords, addingWord!.index]
+      }));
+      nextAddingWord();
       updateAddingStats();
     }
   }
 
   function handleSwitchToLearning() {
     if (addingStats.canSwitchToLearning) {
-      currentMode = 'learning-forward';
-      LearningController.switchMode('learning-forward');
+      currentMode = 'learning';
+      UnifiedLearningService.switchMode('learning');
     }
   }
 
   function handleSkipAddingWord() {
     if (addingWord) {
-      // Just move to next word without adding to any list
-      learningState.update((s) => ({
-        ...s,
-        progress: Math.max(s.progress, addingWord!.index + 1)
-      }));
-      LearningController.saveState();
-      loadAddingWord();
+      nextAddingWord();
     }
   }
 </script>
@@ -242,8 +275,8 @@
               </p>
               <button
                 on:click={() => {
-                  currentMode = 'learning-forward';
-                  LearningController.switchMode('learning-forward');
+                  currentMode = 'learning';
+                  UnifiedLearningService.switchMode('learning');
                 }}
                 class="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
               >
@@ -269,11 +302,9 @@
               />
             </svg>
           </div>
-          <h3 class="mb-2 text-xl font-bold text-gray-900">
-            {MODE_INFO[state.currentMode].label} queue is empty
-          </h3>
+          <h3 class="mb-2 text-xl font-bold text-gray-900">No words available for study</h3>
           <p class="mb-4 max-w-md text-gray-600">
-            Try other queues or add new words to Receptive queue.
+            Add new words to your learning queue or check if any reviews are due.
           </p>
         </div>
       {:else if card}
@@ -287,21 +318,26 @@
             onUnknown={handleUnknown}
           />
 
-          {#if card.isReview}
-            <div class="mt-2 text-center">
-              <span
-                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                class:bg-yellow-100={card.reviewPool === POOLS.POOL1}
-                class:text-yellow-800={card.reviewPool === POOLS.POOL1}
-                class:bg-orange-100={card.reviewPool === POOLS.POOL2}
-                class:text-orange-800={card.reviewPool === POOLS.POOL2}
-                class:bg-green-100={card.reviewPool === POOLS.POOL3}
-                class:text-green-800={card.reviewPool === POOLS.POOL3}
-              >
-                {card.reviewPool} review
-              </span>
-            </div>
-          {/if}
+          <div class="mt-2 text-center">
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+              class:bg-blue-100={card.stage === 'passive'}
+              class:text-blue-800={card.stage === 'passive'}
+              class:bg-green-100={card.stage === 'active'}
+              class:text-green-800={card.stage === 'active'}
+              class:bg-yellow-100={card.stage === 'review1'}
+              class:text-yellow-800={card.stage === 'review1'}
+              class:bg-orange-100={card.stage === 'review2'}
+              class:text-orange-800={card.stage === 'review2'}
+              class:bg-purple-100={card.stage === 'review3'}
+              class:text-purple-800={card.stage === 'review3'}
+            >
+              {card.stage}
+              {#if card.consecutiveCorrect > 0}
+                • {card.consecutiveCorrect}/3 ✓
+              {/if}
+            </span>
+          </div>
         </div>
 
         <UserInstructions variant="compact" />

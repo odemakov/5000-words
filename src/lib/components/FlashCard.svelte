@@ -1,22 +1,22 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { CardDirection } from '$lib/types/learning';
+  import { CardDirection } from '$lib/types/queue';
 
   // Props
   export let word = '';
   export let properties: string[] = [];
   export let translations: string[] = [];
-  export let direction: CardDirection = CardDirection.FORWARD;
+  export let direction: CardDirection = CardDirection.PASSIVE;
 
   // Semantic callback props - clearer than generic onSwipeRight/onSwipeLeft
   export let onKnown = () => {};
   export let onUnknown = () => {};
 
   // Determine what to show based on direction
-  $: frontText = direction === CardDirection.FORWARD ? word : translations[0] || '';
-  $: backText = direction === CardDirection.FORWARD ? translations : [word];
-  $: frontLanguage = direction === CardDirection.FORWARD ? 'French' : 'Russian';
-  $: backLanguage = direction === CardDirection.FORWARD ? 'Russian' : 'French';
+  $: frontText = direction === CardDirection.PASSIVE ? word : translations[0] || '';
+  $: backText = direction === CardDirection.PASSIVE ? translations : [word];
+  $: frontLanguage = direction === CardDirection.PASSIVE ? 'French' : 'Russian';
+  $: backLanguage = direction === CardDirection.PASSIVE ? 'Russian' : 'French';
 
   // State
   let isFlipped = false;

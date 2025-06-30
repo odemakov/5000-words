@@ -1,15 +1,7 @@
 <script lang="ts">
-  import { learningState } from '$lib/controllers/LearningController';
+  import { unifiedLearningState, queueStats } from '$lib/services/UnifiedLearningService';
   import { Storage } from '$lib/storage';
-  import {
-    LEARNING_FORWARD,
-    LEARNING_BACKWARD,
-    REVIEWING,
-    ADDING,
-    MODE_INFO,
-    type LearningMode
-  } from '$lib/constants/modes';
-  import { getReviewDueDate } from '$lib/constants/review';
+  import { MODE_INFO, type LearningMode } from '$lib/constants/modes';
   import { activeTooltip, toggleTooltip, closeTooltip } from '$lib/stores/tooltipStore';
   import { onMount } from 'svelte';
 
@@ -25,19 +17,20 @@
 
   // Get words data for tooltip
   function getWordsForMode(): Array<{ word: string; translations: string[]; info: string }> {
-    const state = $learningState;
+    const state = $unifiedLearningState;
     const allWords = Storage.getWords() || [];
 
     switch (mode) {
-      case LEARNING_FORWARD:
-        return state.forwardQueue
+      case 'learning':
+        return state.learningQueue
+          .filter((item) => item.stage === 'passive' || item.stage === 'active')
           .map((item) => {
-            const wordData = allWords[item.wordIndex];
+            const wordData = allWords[item.wordId];
             return wordData
               ? {
                   word: wordData.word,
                   translations: wordData.translations,
-                  info: `Attempts: ${item.attempts}`
+                  info: `Stage: ${item.stage} • Attempts: ${item.attempts}`
                 }
               : null;
           })
@@ -45,32 +38,19 @@
             (item): item is { word: string; translations: string[]; info: string } => item !== null
           );
 
-      case LEARNING_BACKWARD:
-        return state.backwardQueue
-          .map((item) => {
-            const wordData = allWords[item.wordIndex];
-            return wordData
-              ? {
-                  word: wordData.word,
-                  translations: wordData.translations,
-                  info: `Attempts: ${item.attempts}`
-                }
-              : null;
-          })
-          .filter(
-            (item): item is { word: string; translations: string[]; info: string } => item !== null
-          );
-
-      case REVIEWING: {
+      case 'reviewing': {
         const now = Date.now();
-        return state.reviewQueue
-          .sort((a, b) => getReviewDueDate(a.addedAt, a.pool) - getReviewDueDate(b.addedAt, b.pool)) // Sort by due date (earliest first)
+        return state.learningQueue
+          .filter(
+            (item) =>
+              item.stage === 'review1' || item.stage === 'review2' || item.stage === 'review3'
+          )
+          .sort((a, b) => a.showAfter - b.showAfter)
           .map((item) => {
-            const wordData = allWords[item.wordIndex];
+            const wordData = allWords[item.wordId];
             if (!wordData) return null;
 
-            const dueDate = getReviewDueDate(item.addedAt, item.pool);
-            const timeUntilDue = dueDate - now;
+            const timeUntilDue = item.showAfter - now;
             let dueInfo: string;
 
             if (timeUntilDue <= 0) {
@@ -92,7 +72,7 @@
             return {
               word: wordData.word,
               translations: wordData.translations,
-              info: `${dueInfo} • Pool #${item.pool.replace('POOL', '')}`
+              info: `${dueInfo} • ${item.stage}`
             };
           })
           .filter(
@@ -131,7 +111,7 @@
   $: isActive = currentMode === mode;
   $: showTooltip = $activeTooltip === mode;
   $: wordsForTooltip = showTooltip ? getWordsForMode() : [];
-  $: hasWords = count > 0 || mode === ADDING;
+  $: hasWords = count > 0 || mode === 'adding';
 
   function getButtonClasses() {
     const baseClasses =
@@ -142,7 +122,7 @@
     }
 
     if (isActive) {
-      const activeColor = mode === REVIEWING ? 'bg-yellow-500' : 'bg-blue-500';
+      const activeColor = mode === 'reviewing' ? 'bg-yellow-500' : 'bg-blue-500';
       return `${baseClasses} ${activeColor} text-white shadow-sm`;
     }
 
@@ -159,7 +139,7 @@
   >
     <div class="flex flex-col items-center">
       <!-- Help icon -->
-      {#if hasWords && mode !== ADDING}
+      {#if hasWords && mode !== 'adding'}
         <div
           class="absolute top-1 right-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-gray-400 text-white transition-colors hover:bg-gray-500"
           on:click={handleHelpClick}
@@ -181,21 +161,21 @@
 
       <!-- Main icon -->
       <svg class="mb-1 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        {#if mode === LEARNING_FORWARD || mode === LEARNING_BACKWARD}
+        {#if mode === 'learning'}
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
             d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
           />
-        {:else if mode === REVIEWING}
+        {:else if mode === 'reviewing'}
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
           />
-        {:else if mode === ADDING}
+        {:else if mode === 'adding'}
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -209,11 +189,11 @@
       <span class="text-sm">{MODE_INFO[mode].label}</span>
 
       <!-- Stats -->
-      {#if mode === LEARNING_FORWARD || mode === LEARNING_BACKWARD}
+      {#if mode === 'learning'}
         {#if count > 0}
           <span class="text-xs opacity-75">{count} words</span>
         {/if}
-      {:else if mode === REVIEWING}
+      {:else if mode === 'reviewing'}
         <div class="text-xs opacity-75">{count}/{total} words</div>
       {/if}
     </div>

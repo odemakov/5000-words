@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { learningState } from '$lib/controllers/LearningController';
+  import { unifiedLearningState } from '$lib/services/UnifiedLearningService';
 
   export let onSettingsClick: () => void;
 
-  $: level = $learningState.detectedLevel;
-  $: progress = $learningState.progress;
-  $: wordsLearned = $learningState.wordsLearned;
+  $: level = $unifiedLearningState.detectedLevel;
+  $: progress = $unifiedLearningState.progress;
+  $: wordsLearned = $unifiedLearningState.wordsLearned;
 
   const levelRanges = {
     A1: { min: 0, max: 799 },

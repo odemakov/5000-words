@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { LearningController, learningState } from '../controllers/LearningController.js';
+  import {
+    UnifiedLearningService,
+    unifiedLearningState,
+    queueStats
+  } from '$lib/services/UnifiedLearningService';
+  import QueueStatsDisplay from '$lib/components/QueueStatsDisplay.svelte';
   import { Storage } from '../storage.js';
   import { goto } from '$app/navigation';
-  import { DEFAULT_REVIEW_INTERVALS } from '$lib/constants/review';
+  import { DEFAULT_SPACING_INTERVALS } from '$lib/types/queue';
 
   export let onClose: () => void;
 
-  $: currentLevel = $learningState.detectedLevel;
-  $: todayStats = $learningState.todayStats;
+  $: currentLevel = $unifiedLearningState.detectedLevel;
+  $: todayStats = $unifiedLearningState.todayStats;
 
   let showResetConfirmation = false;
   let showExportSuccess = false;
@@ -18,9 +23,9 @@
   let theme: 'light' | 'dark' = 'light';
   let soundEffects = true;
   let dailyGoal = 20;
-  let pool1Hours = DEFAULT_REVIEW_INTERVALS.POOL1_HOURS;
-  let pool2Hours = DEFAULT_REVIEW_INTERVALS.POOL2_HOURS;
-  let pool3Hours = DEFAULT_REVIEW_INTERVALS.POOL3_HOURS;
+  let review1Hours = DEFAULT_SPACING_INTERVALS.review1 / (1000 * 60 * 60);
+  let review2Hours = DEFAULT_SPACING_INTERVALS.review2 / (1000 * 60 * 60);
+  let review3Hours = DEFAULT_SPACING_INTERVALS.review3 / (1000 * 60 * 60);
 
   // Load saved settings on component mount
   function loadSettings() {
@@ -30,9 +35,9 @@
       theme = (settings.theme as 'light' | 'dark') || 'light';
       soundEffects = settings.soundEffects !== false;
       dailyGoal = (settings.dailyGoal as number) || 20;
-      pool1Hours = settings.reviewIntervals?.pool1Hours || DEFAULT_REVIEW_INTERVALS.POOL1_HOURS;
-      pool2Hours = settings.reviewIntervals?.pool2Hours || DEFAULT_REVIEW_INTERVALS.POOL2_HOURS;
-      pool3Hours = settings.reviewIntervals?.pool3Hours || DEFAULT_REVIEW_INTERVALS.POOL3_HOURS;
+      review1Hours = settings.reviewIntervals?.pool1Hours || review1Hours;
+      review2Hours = settings.reviewIntervals?.pool2Hours || review2Hours;
+      review3Hours = settings.reviewIntervals?.pool3Hours || review3Hours;
     }
   }
 
@@ -44,9 +49,9 @@
       soundEffects,
       dailyGoal,
       reviewIntervals: {
-        pool1Hours,
-        pool2Hours,
-        pool3Hours
+        pool1Hours: review1Hours,
+        pool2Hours: review2Hours,
+        pool3Hours: review3Hours
       }
     });
   }
@@ -69,8 +74,7 @@
   // Reset progress
   function handleReset() {
     if (showResetConfirmation) {
-      LearningController.resetProgress();
-      Storage.clearLearningState();
+      UnifiedLearningService.resetProgress();
       showResetConfirmation = false;
       onClose();
       // Reload the page to restart from level test
@@ -83,7 +87,7 @@
   // Export data
   function handleExport() {
     try {
-      const data = LearningController.exportData();
+      const data = UnifiedLearningService.exportData();
       const blob = new Blob([data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -117,8 +121,7 @@
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (data.learningState && data.version) {
-          Storage.saveLearningState(data.learningState);
+        if (UnifiedLearningService.importData(e.target?.result as string)) {
           alert('Data imported successfully! The page will reload.');
           window.location.reload();
         } else {

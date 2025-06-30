@@ -45,8 +45,8 @@ npm run dev
 ### First Launch
 1. **Word Loading**: App downloads vocabulary database on first visit
 2. **Level Assessment**: Complete the adaptive placement test
-3. **Learning Setup**: System initializes personalized learning queues
-4. **Begin Study**: Start learning with spaced repetition algorithm
+3. **Learning Setup**: System initializes unified learning queue
+4. **Begin Study**: Start learning with 3-consecutive progression system
 
 ## Learning Methodology
 
@@ -58,7 +58,7 @@ npm run dev
 
 ### Spaced Repetition Algorithm
 ```
-New Word → Forward Queue → Backward Queue → Pool 1 Review → Pool 2 Review → Pool 3 Review → Mastered
+Learning Path: New Word → Passive Stage → Active Stage → Review 1 → Review 2 → Review 3 → Mastered
 ```
 
 ### Learning Modes
@@ -77,16 +77,25 @@ New Word → Forward Queue → Backward Queue → Pool 1 Review → Pool 2 Revie
 
 ### Data Structure
 ```typescript
-interface LearningState {
+interface UnifiedLearningState {
   detectedLevel: 'A1' | 'A2' | 'B1' | 'B2';
-  progress: number;           // Highest word index reached
-  wordsLearned: number;       // Total mastered words
-  forwardQueue: WordInQueue[]; // French → Russian
-  backwardQueue: WordInQueue[]; // Russian → French
-  reviewQueue: ReviewWord[];  // Pool-based review system
-  learnedList: number[];      // Fully mastered word indices
-  currentMode: 'learning-forward' | 'learning-backward' | 'reviews';
-  todayStats: DailyStats;     // Session analytics
+  progress: number;                  // Highest word index reached
+  wordsLearned: number;              // Total mastered words
+  learningQueue: WordLearningItem[]; // Single queue for all stages
+  learnedWords: number[];            // Fully mastered word IDs
+  currentMode: 'learning' | 'reviewing' | 'adding';
+  todayStats: DailyStats;            // Session analytics
+}
+
+interface WordLearningItem {
+  wordId: number;                    // Reference to word index
+  stage: LearningStage;              // Current learning stage
+  consecutiveCorrect: number;        // Consecutive "I know" responses (0-2)
+  consecutiveWrong: number;          // Consecutive "I don't know" responses (0-2)
+  showAfter: number;                 // Timestamp when available for review
+  attempts: number;                  // Total attempts made
+  addedAt: number;                   // When first added to queue
+  lastSeen: number;                  // Last time shown to user
 }
 ```
 
@@ -117,8 +126,8 @@ interface LearningState {
 
 ### Progress Tracking
 - **Level Progress**: Visual progress bars for each CEFR level
-- **Queue Statistics**: Forward/Backward/Review queue counts
-- **Learning Curve**: Historical performance data
+- **Queue Statistics**: Unified queue with stage-based statistics
+- **Learning Analytics**: Historical performance and efficiency metrics
 - **Export Capability**: JSON backup of complete progress
 
 ## Development
